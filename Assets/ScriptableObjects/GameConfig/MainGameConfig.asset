@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameConfig
   startingMoney: 3
   startingFortHp: 20
-  startingHandSize: 3
+  startingHandSize: 5
   maxHandSize: 7
   moneyPerTurn: 2
+  buyCost: 1

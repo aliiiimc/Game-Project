@@ -10,8 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 2341771842476249975}
   - component: {fileID: 2169774297900591512}
-  - component: {fileID: -5327154927842894579}
   - component: {fileID: 5304391304345794117}
+  - component: {fileID: 6919332653088283219}
   m_Layer: 0
   m_Name: hextile
   m_TagString: Untagged
@@ -93,22 +93,6 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!114 &-5327154927842894579
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6914111918059673649}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7fa24652b83ab3949ba5e57376ca19b1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::HexTile
-  q: 0
-  r: 0
-  tileType: empty
-  owner: none
 --- !u!60 &5304391304345794117
 PolygonCollider2D:
   m_ObjectHideFlags: 0
@@ -183,3 +167,19 @@ PolygonCollider2D:
       - {x: 0.0859375, y: -0.46875}
       - {x: 0.2421875, y: -0.37890625}
   m_UseDelaunayMesh: 1
+--- !u!114 &6919332653088283219
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6914111918059673649}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7fa24652b83ab3949ba5e57376ca19b1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HexTile
+  q: 0
+  r: 0
+  tileType: empty
+  owner: none

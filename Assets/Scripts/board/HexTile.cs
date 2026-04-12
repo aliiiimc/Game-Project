@@ -66,15 +66,6 @@ public class HexTile : MonoBehaviour
     void OnMouseDown()
     {
         Debug.Log($"Clicked ({q},{r}) | Type: {tileType} | Owner: {owner}");
-
-        HexGrid grid = FindFirstObjectByType<HexGrid>();
-
-        // Highlight all tiles within range 2
-        List<HexTile> tilesInRange = HexUtils.GetTilesInRange(this, 2, grid);
-        foreach (HexTile t in tilesInRange)
-        {
-            t.Highlight(Color.green);
-        }
     }
     void OnMouseEnter()
     {

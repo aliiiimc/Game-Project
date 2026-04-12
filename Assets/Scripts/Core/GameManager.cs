@@ -54,8 +54,8 @@ public class GameManager : MonoBehaviour // This class will manage the overall g
 
     }
    private void StartTurn(){
-    if (currentPhase == GamePhase.Income)
-    {   hasBoughtThisTurn = false;
+    if (currentPhase == GamePhase.Income){   
+        hasBoughtThisTurn = false;
         currentPlayer.money += gameConfig.moneyPerTurn;
 
         Debug.Log(currentPlayer.playerName + " receives income.");

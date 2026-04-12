@@ -24,6 +24,11 @@ public class CardRuntimeState
     [SerializeField] private OptionalInt currentDamage;
     [SerializeField] private OptionalInt currentRevenue;
 
+    // Spell-specific runtime values used by effect resolution and turn ticking.
+    [SerializeField] private SpellEffectType spellEffectType;
+    [SerializeField] private OptionalInt spellEffectPower;
+    [SerializeField] private int remainingEffectDurationTurns;
+
     // Attack readiness mainly used by character cards.
     [SerializeField] private bool isReadyToAttack;
 
@@ -36,6 +41,10 @@ public class CardRuntimeState
     public OptionalInt CurrentDamage => currentDamage;
     public OptionalInt CurrentRevenue => currentRevenue;
     public bool IsReadyToAttack => isReadyToAttack;
+    public SpellEffectType SpellEffectType => spellEffectType;
+    public OptionalInt SpellEffectPower => spellEffectPower;
+    public int RemainingEffectDurationTurns => remainingEffectDurationTurns;
+    public bool HasPersistentEffect => remainingEffectDurationTurns > 0;
 
     // Builds a mutable state object from static card definition data.
     public CardRuntimeState(CardData sourceCard)
@@ -50,6 +59,9 @@ public class CardRuntimeState
         currentHp = OptionalInt.None;
         currentDamage = OptionalInt.None;
         currentRevenue = OptionalInt.None;
+        spellEffectType = default;
+        spellEffectPower = OptionalInt.None;
+        remainingEffectDurationTurns = 0;
 
         InitializeCardSpecificState();
     }
@@ -70,6 +82,16 @@ public class CardRuntimeState
             currentHp = worldEffectCard.structureHp;
             currentDamage = worldEffectCard.structureDamage;
             currentRevenue = worldEffectCard.revenuePerTurn;
+            return;
+        }
+
+        if (sourceCard is SpellCardData spellCard)
+        {
+            spellEffectType = spellCard.effectType;
+            spellEffectPower = new OptionalInt(spellCard.effectPower);
+            remainingEffectDurationTurns = Mathf.Max(0, spellCard.effectDurationTurns);
+            currentDamage = new OptionalInt(spellCard.effectPower);
+            return;
         }
     }
 
@@ -109,5 +131,64 @@ public class CardRuntimeState
     public void SetAttackReady(bool ready)
     {
         isReadyToAttack = ready;
+    }
+
+    // Decrements active spell duration by one turn, stopping at zero.
+    public void ConsumeEffectDurationTurn()
+    {
+        if (remainingEffectDurationTurns <= 0)
+        {
+            return;
+        }
+
+        remainingEffectDurationTurns--;
+    }
+
+    // Resets spell duration from static card data.
+    public void ResetEffectDurationFromDefinition()
+    {
+        if (sourceCard is SpellCardData spellCard)
+        {
+            remainingEffectDurationTurns = Mathf.Max(0, spellCard.effectDurationTurns);
+            return;
+        }
+
+        remainingEffectDurationTurns = 0;
+    }
+
+    // Applies non-negative damage to cards that have HP.
+    public void ApplyDamage(int amount)
+    {
+        if (!currentHp.HasValue)
+        {
+            return;
+        }
+
+        int clampedAmount = Mathf.Max(0, amount);
+        currentHp = new OptionalInt(Mathf.Max(0, currentHp.Value - clampedAmount));
+    }
+
+    // Applies non-negative healing to cards that have HP.
+    public void ApplyHeal(int amount)
+    {
+        if (!currentHp.HasValue)
+        {
+            return;
+        }
+
+        int clampedAmount = Mathf.Max(0, amount);
+        currentHp = new OptionalInt(currentHp.Value + clampedAmount);
+    }
+
+    // Adds non-negative revenue to cards that track revenue.
+    public void AddRevenue(int amount)
+    {
+        if (!currentRevenue.HasValue)
+        {
+            currentRevenue = new OptionalInt(0);
+        }
+
+        int clampedAmount = Mathf.Max(0, amount);
+        currentRevenue = new OptionalInt(currentRevenue.Value + clampedAmount);
     }
 }

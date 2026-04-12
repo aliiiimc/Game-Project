@@ -13,6 +13,7 @@ public class CardManifest : MonoBehaviour
 
     public CardRuntimeState RuntimeState => runtimeState;
     public string OwnerId => ownerId;
+    public string OwnerKey => ownerId;
 
     // Cache SpriteRenderer once to avoid repeated GetComponent calls.
     private void Awake()
@@ -37,12 +38,6 @@ public class CardManifest : MonoBehaviour
         }
 
         runtimeState.ManifestOnBoard(position);
-    }
-
-    // Compatibility overload for older callers that still pass Vector2Int.
-    public void SetBoardPosition(Vector2Int position)
-    {
-        SetBoardPosition(AxialCoord.FromVector2Int(position));
     }
 
     // Keeps manifest sprite in sync with the board representation artwork.

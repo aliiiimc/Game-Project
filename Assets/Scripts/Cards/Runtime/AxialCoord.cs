@@ -14,19 +14,6 @@ public struct AxialCoord : IEquatable<AxialCoord>
         this.r = r;
     }
 
-    public static AxialCoord Zero => new AxialCoord(0, 0);
-
-    // Helper for transitioning from old Vector2Int-based calls.
-    public static AxialCoord FromVector2Int(Vector2Int value)
-    {
-        return new AxialCoord(value.x, value.y);
-    }
-
-    public Vector2Int ToVector2Int()
-    {
-        return new Vector2Int(q, r);
-    }
-
     public bool Equals(AxialCoord other)
     {
         return q == other.q && r == other.r;

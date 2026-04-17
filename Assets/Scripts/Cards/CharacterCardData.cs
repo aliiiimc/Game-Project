@@ -1,3 +1,4 @@
+// Data model for character/unit cards with health, attack damage, readiness state, and board movement capacity.
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "CharacterCard", menuName = "Cards/Character")]
@@ -16,9 +17,7 @@ public class CharacterCardData : CardData
     // Whether the unit can attack immediately after being summoned.
     public bool startsReadyToAttack;
 
-    // Number of tiles this unit can move each turn.
     public OptionalInt unitMovementCapacity;
 
-    // Character cards use unit movement rules.
     public override OptionalInt MovementCapacity => unitMovementCapacity;
 }

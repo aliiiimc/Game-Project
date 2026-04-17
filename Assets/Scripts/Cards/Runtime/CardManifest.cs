@@ -1,6 +1,6 @@
+// MonoBehaviour representing a card after it has been manifested on the board, managing sprite rendering and runtime state.
 using UnityEngine;
 
-// Scene object that represents a card after it is manifested in the world.
 public class CardManifest : MonoBehaviour
 {
     // Mutable runtime values associated with this manifested card.

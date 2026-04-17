@@ -1,4 +1,4 @@
-// Write API used by effects to mutate game/card state.
+// Write/mutation interface used by effects to apply game state changes including cost spending, zone transitions, damage, healing, and revenue.
 public interface ICardStateWriter
 {
     bool TrySpendCost(string playerId, int amount);

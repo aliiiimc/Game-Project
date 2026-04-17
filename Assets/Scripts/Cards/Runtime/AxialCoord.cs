@@ -1,7 +1,7 @@
+// Serializable hex grid coordinate system using axial coordinates (q-column and r-row axes) for board tile positioning.
 using System;
 using UnityEngine;
 
-// Axial coordinate for hex grids: q (column axis) and r (row axis).
 [Serializable]
 public struct AxialCoord : IEquatable<AxialCoord>
 {

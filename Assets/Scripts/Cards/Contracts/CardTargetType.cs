@@ -1,4 +1,4 @@
-// Describes what kind of object a card action is targeting.
+// Enumeration defining all possible target types a card action can target: self, allies, enemies, tiles, forts, or players.
 public enum CardTargetType
 {
     None,

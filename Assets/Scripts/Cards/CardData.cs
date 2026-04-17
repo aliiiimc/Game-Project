@@ -1,7 +1,8 @@
+// Base abstract class defining the core data model shared by all card types (Character, Spell, WorldEffect).
+// Provides common properties like name, cost, and sprite, plus polymorphic movement capacity.
 using UnityEngine;
 using UnityEngine.Serialization;
 
-// Base data model shared by all card types (Character, Spell, WorldEffect).
 public abstract class CardData : ScriptableObject
 {
     [Header("Core")]
@@ -22,7 +23,6 @@ public abstract class CardData : ScriptableObject
     [TextArea]
     public string description;
 
-    // Child classes provide type-specific movement fields through this property.
     public abstract OptionalInt MovementCapacity { get; }
 
     // Safe card title used by lookup code and UI.

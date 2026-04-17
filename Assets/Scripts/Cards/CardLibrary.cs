@@ -1,3 +1,4 @@
+// Centralized registry of available card definitions accessible by display name; acts as the master card library for game modes.
 using System.Collections.Generic;
 using UnityEngine;
 

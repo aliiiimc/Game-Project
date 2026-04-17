@@ -1,6 +1,6 @@
+// Unified target payload carrying board coordinates, card references, player identifiers, and entity IDs for validators and effects.
 using System;
 
-// Unified target payload shared by validators and effects.
 [Serializable]
 public struct CardTarget
 {

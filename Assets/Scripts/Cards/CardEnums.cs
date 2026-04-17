@@ -6,7 +6,7 @@
 //     Legendary
 // }
 
-// High-level spell behavior category used by effect resolvers.
+// Enumerations defining spell effect types (Buff, Damage, Heal, etc.) and world effect categories (Structure, Hazard, Weather, etc.).
 public enum SpellEffectType
 {
     Buff,

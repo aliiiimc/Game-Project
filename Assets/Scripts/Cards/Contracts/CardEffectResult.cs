@@ -1,4 +1,4 @@
-// Result returned by card effects after attempting execution.
+// Result structure returned by card effect implementations containing success/failure status, reason codes, and optional telemetry data.
 public readonly struct CardEffectResult
 {
     public bool Succeeded { get; }

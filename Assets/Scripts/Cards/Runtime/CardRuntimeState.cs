@@ -1,3 +1,4 @@
+// Mutable runtime state of a card during match execution, tracking zone, position, movement, health, and effect-specific values.
 using System;
 using UnityEngine;
 
@@ -16,7 +17,6 @@ public class CardRuntimeState
     // Axial hex coordinate used when manifested.
     [SerializeField] private AxialCoord boardPosition;
 
-    // Current movement points for this turn/state.
     [SerializeField] private int currentMovementCapacity;
 
     // Optional mutable stats depending on card type.

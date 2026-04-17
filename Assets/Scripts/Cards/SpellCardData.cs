@@ -1,3 +1,4 @@
+// Data model for spell cards that define offensive/defensive effects with power, duration, and optional movement.
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "SpellCard", menuName = "Cards/Spell")]
@@ -13,9 +14,7 @@ public class SpellCardData : CardData
     // Optional duration in turns for persistent effects. Set 0 for instant effects.
     public int effectDurationTurns;
 
-    // Optional movement value for spells that reposition or grant movement.
     public OptionalInt spellMovementCapacity;
 
-    // Spell cards expose their own movement-related value.
     public override OptionalInt MovementCapacity => spellMovementCapacity;
 }

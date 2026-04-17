@@ -1,4 +1,4 @@
-// Context passed to target validators.
+// Context object passed to target validators containing player identities and read-only board state for validation checks.
 public sealed class CardValidationContext
 {
     public string ActingPlayerId;

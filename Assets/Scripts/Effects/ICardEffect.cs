@@ -1,4 +1,4 @@
-// Interface implemented by all concrete card effects (damage, heal, summon, etc.).
+// Interface for concrete card effect implementations (damage, healing, summoning, etc.) that execute card ability logic.
 public interface ICardEffect
 {
     // Stable id used for lookups from data assets.

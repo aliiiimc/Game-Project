@@ -1,4 +1,4 @@
-// Result returned by a target validator before card execution.
+// Result structure returned by target validators indicating validity, reason codes, and human-readable failure messages.
 public readonly struct CardValidationResult
 {
     public bool IsValid { get; }

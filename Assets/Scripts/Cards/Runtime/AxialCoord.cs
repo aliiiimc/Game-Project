@@ -19,10 +19,6 @@ public struct AxialCoord : IEquatable<AxialCoord>
         return q == other.q && r == other.r;
     }
 
-    public override bool Equals(object obj)
-    {
-        return obj is AxialCoord other && Equals(other);
-    }
 
     public override int GetHashCode()
     {

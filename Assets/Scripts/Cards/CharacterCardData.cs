@@ -17,8 +17,8 @@ public class CharacterCardData : CardData
     public bool startsReadyToAttack;
 
     // Number of tiles this unit can move each turn.
-    public int unitMovementCapacity;
+    public OptionalInt unitMovementCapacity;
 
     // Character cards use unit movement rules.
-    public override int MovementCapacity => unitMovementCapacity;
+    public override OptionalInt MovementCapacity => unitMovementCapacity;
 }

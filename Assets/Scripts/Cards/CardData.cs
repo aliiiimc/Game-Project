@@ -15,7 +15,7 @@ public abstract class CardData : ScriptableObject
     [FormerlySerializedAs("artwork")]
     public Sprite handDeckSprite;
 
-    // Drop rarity tier.
+
     // public CardRarity rarity = CardRarity.Common;
 
     // Rules text shown to the player.
@@ -23,7 +23,7 @@ public abstract class CardData : ScriptableObject
     public string description;
 
     // Child classes provide type-specific movement fields through this property.
-    public abstract int MovementCapacity { get; }
+    public abstract OptionalInt MovementCapacity { get; }
 
     // Safe card title used by lookup code and UI.
     public string DisplayName => string.IsNullOrWhiteSpace(cardName) ? name : cardName;

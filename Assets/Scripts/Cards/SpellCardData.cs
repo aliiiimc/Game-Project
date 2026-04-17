@@ -14,8 +14,8 @@ public class SpellCardData : CardData
     public int effectDurationTurns;
 
     // Optional movement value for spells that reposition or grant movement.
-    public int spellMovementCapacity;
+    public OptionalInt spellMovementCapacity;
 
     // Spell cards expose their own movement-related value.
-    public override int MovementCapacity => spellMovementCapacity;
+    public override OptionalInt MovementCapacity => spellMovementCapacity;
 }

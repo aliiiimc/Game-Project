@@ -29,8 +29,8 @@ public class WorldEffectCardData : CardData
     public int durationTurns;
 
     // Most world effects do not move, but field remains for rules flexibility.
-    public int worldEffectMovementCapacity;
+    public OptionalInt worldEffectMovementCapacity;
 
     // World-effect cards expose their own movement-related value.
-    public override int MovementCapacity => worldEffectMovementCapacity;
+    public override OptionalInt MovementCapacity => worldEffectMovementCapacity;
 }

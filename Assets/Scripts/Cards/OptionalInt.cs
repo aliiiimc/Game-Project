@@ -1,4 +1,3 @@
-// Serializable nullable-int replacement enabling optional integer fields in Unity Inspector for cases where a value may be absent.
 using System;
 using UnityEngine;
 

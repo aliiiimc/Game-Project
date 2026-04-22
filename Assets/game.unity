@@ -181,7 +181,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 18
+  orthographic size: 9
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -206,7 +206,7 @@ Transform:
   m_GameObject: {fileID: 593340296}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.97, y: 8.83, z: -10}
+  m_LocalPosition: {x: 10.04, y: 8, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -286,8 +286,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HexGrid
   hexPrefab: {fileID: 6914111918059673649, guid: 4fba3e25e8558df418f0a6fa963bbf12, type: 3}
-  gridWidth: 49
-  gridHeight: 28
+  gridWidth: 17
+  gridHeight: 20
   hexSize: 0.65
   unitPrefab: {fileID: 7106110467106997786, guid: 515f55841c8020f4c8f087df7e501073, type: 3}
 --- !u!4 &680960800

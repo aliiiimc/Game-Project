@@ -1,12 +1,9 @@
-// MonoBehaviour representing a card after it has been manifested on the board, managing sprite rendering and runtime state.
 using UnityEngine;
 
 public class CardManifest : MonoBehaviour
 {
-    // Mutable runtime values associated with this manifested card.
     [SerializeReference] private CardRuntimeState runtimeState;
 
-    // Owner identifier used for team/faction logic.
     [SerializeField] private string ownerId;
 
     private SpriteRenderer spriteRenderer;
@@ -15,13 +12,11 @@ public class CardManifest : MonoBehaviour
     public string OwnerId => ownerId;
     public string OwnerKey => ownerId;
 
-    // Cache SpriteRenderer once to avoid repeated GetComponent calls.
     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
-    // Injects runtime data and owner when this object is spawned.
     public void Setup(CardRuntimeState state, string owner)
     {
         runtimeState = state;
@@ -29,7 +24,6 @@ public class CardManifest : MonoBehaviour
         RefreshVisual();
     }
 
-    // Updates runtime board position using axial hex coordinates.
     public void SetBoardPosition(AxialCoord position)
     {
         if (runtimeState == null)
@@ -40,7 +34,6 @@ public class CardManifest : MonoBehaviour
         runtimeState.ManifestOnBoard(position);
     }
 
-    // Keeps manifest sprite in sync with the board representation artwork.
     private void RefreshVisual()
     {
         if (runtimeState?.SourceCard == null || spriteRenderer == null)
@@ -48,18 +41,26 @@ public class CardManifest : MonoBehaviour
             return;
         }
 
-        Sprite manifestSprite = runtimeState.SourceCard switch
+        Sprite manifestSprite = null;
+        if (runtimeState.SourceCard is CharacterCardData)
         {
-            CharacterCardData characterCard => characterCard.manifestedSprite,
-            WorldEffectCardData worldEffectCard => worldEffectCard.manifestedSprite,
-            _ => runtimeState.SourceCard.handDeckSprite
-        };
+            CharacterCardData characterCard = (CharacterCardData)runtimeState.SourceCard;
+            manifestSprite = characterCard.manifestedSprite;
+        }
+        else if (runtimeState.SourceCard is WorldEffectCardData)
+        {
+            WorldEffectCardData worldEffectCard = (WorldEffectCardData)runtimeState.SourceCard;
+            manifestSprite = worldEffectCard.manifestedSprite;
+        }
+
         if (manifestSprite == null)
         {
-            // Fallback keeps old/new assets visible even before all data is filled.
-            manifestSprite = runtimeState.SourceCard.handDeckSprite;
+            spriteRenderer.sprite = null;
+            spriteRenderer.enabled = false;
+            return;
         }
 
         spriteRenderer.sprite = manifestSprite;
+        spriteRenderer.enabled = true;
     }
 }

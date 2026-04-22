@@ -1,4 +1,3 @@
-// Data model for world effect cards (structures, hazards, weather) with optional health, damage, revenue, vision, and movement modifiers.
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "WorldEffectCard", menuName = "Cards/World Effect")]
@@ -19,7 +18,6 @@ public class WorldEffectCardData : CardData
 
     public OptionalInt movementModifier;
 
-    // Optional duration in turns. Use 0 for permanent/persistent effects.
     public int durationTurns;
 
     public OptionalInt worldEffectMovementCapacity;

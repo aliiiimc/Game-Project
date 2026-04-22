@@ -1,4 +1,3 @@
-// Data model for character/unit cards with health, attack damage, readiness state, and board movement capacity.
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "CharacterCard", menuName = "Cards/Character")]

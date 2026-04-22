@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 [System.Serializable]
 public class PlayerState
 {
@@ -8,4 +10,6 @@ public class PlayerState
     public int handCount;
     public int deckCount;
     public int maxHandSize;
+    public List<CardRuntimeState> handCards = new List<CardRuntimeState>();
+
 }

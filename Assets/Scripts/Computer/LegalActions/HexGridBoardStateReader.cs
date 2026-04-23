@@ -21,7 +21,7 @@ namespace FortGame.Computer
                 return false;
             }
 
-            return _hexGrid.GetTile(tile.q, tile.r) != null;
+            return _hexGrid.GetTile(tile) != null;
         }
 
         public bool IsTileOccupied(AxialCoord tile)
@@ -31,7 +31,7 @@ namespace FortGame.Computer
                 return false;
             }
 
-            HexTile foundTile = _hexGrid.GetTile(tile.q, tile.r);
+            HexTile foundTile = _hexGrid.GetTile(tile);
             return foundTile != null && !foundTile.IsEmpty();
         }
 

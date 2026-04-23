@@ -49,7 +49,7 @@ namespace FortGame.UI
             {
                 for (int q = 0; q < _hexGrid.gridWidth; q++)
                 {
-                    HexTile tile = _hexGrid.GetTile(q, r);
+                    HexTile tile = _hexGrid.GetTile(new AxialCoord(q, r));
                     if (tile != null && tile.IsEmpty())
                     {
                         tile.Highlight(new Color(0.2f, 1f, 0.2f, 1f)); // Green
@@ -102,12 +102,12 @@ namespace FortGame.UI
             CardTarget target = new CardTarget
             {
                 type = CardTargetType.Tile,
-                tile = new AxialCoord(targetTile.q, targetTile.r)
+                tile = new AxialCoord(targetTile.coord.q, targetTile.coord.r)
             };
 
             selectionMgr.ConfirmSelection(target);
 
-            Debug.Log($"[TargetSelectionManager] Target confirmed at ({targetTile.q}, {targetTile.r})");
+            Debug.Log($"[TargetSelectionManager] Target confirmed at ({targetTile.coord.q}, {targetTile.coord.r})");
 
             ClearHighlights();
 

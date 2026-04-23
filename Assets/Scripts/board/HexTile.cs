@@ -3,8 +3,7 @@ using System.Collections.Generic;
 
 public class HexTile : MonoBehaviour
 {
-    public int q;
-    public int r;
+    public AxialCoord coord;
     public string tileType = "empty"; // empty, fort, unit
     public string owner = "none";     // none, player, enemy
     private SpriteRenderer spriteRenderer;
@@ -45,11 +44,9 @@ public class HexTile : MonoBehaviour
     {
         tileType = "empty";
         owner = "none";
-        // Reset to territory color
-        if (r < FindFirstObjectByType<HexGrid>().gridHeight / 2)
-            originalColor = new Color(0.6f, 0.8f, 1f);
-        else
-            originalColor = new Color(1f, 0.7f, 0.7f);
+        originalColor = (coord.r < FindFirstObjectByType<HexGrid>().gridHeight / 2)
+            ? new Color(0.6f, 0.8f, 1f)
+            : new Color(1f, 0.7f, 0.7f);
         spriteRenderer.color = originalColor;
     }
 
@@ -65,15 +62,15 @@ public class HexTile : MonoBehaviour
 
     void OnMouseDown()
     {
-        Debug.Log($"Clicked ({q},{r}) | Type: {tileType} | Owner: {owner}");
+        Debug.Log($"Clicked ({coord.q},{coord.r}) | Type: {tileType} | Owner: {owner}");
 
-        // Attempt to select this tile as a target if target selection is active
         FortGame.UI.TargetSelectionManager targetMgr = FortGame.UI.TargetSelectionManager.Instance;
         if (targetMgr != null)
         {
             targetMgr.TrySelectTarget(this);
         }
     }
+
     void OnMouseEnter()
     {
         if (tileType != "fort")

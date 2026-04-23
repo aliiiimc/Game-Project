@@ -1,5 +1,3 @@
-// Base abstract class defining the core data model shared by all card types (Character, Spell, WorldEffect).
-// Provides common properties like name, cost, and sprite, plus polymorphic movement capacity.
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -12,10 +10,6 @@ public abstract class CardData : ScriptableObject
 
     [FormerlySerializedAs("artwork")]
     public Sprite handDeckSprite;
-
-
-    // public CardRarity rarity = CardRarity.Common;
-
     [TextArea]
     public string description;
 

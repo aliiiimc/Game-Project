@@ -1,42 +1,34 @@
-// Mutable runtime state of a card during match execution, tracking zone, position, movement, health, and effect-specific values.
 using System;
 using UnityEngine;
 
 [Serializable]
 public class CardRuntimeState
 {
-    // Immutable ScriptableObject definition that this runtime state came from.
     [SerializeField] private CardData sourceCard;
 
-    // Current location of the card in match flow.
     [SerializeField] private CardZone currentZone;
 
-    // True when represented by an in-scene object on the board.
     [SerializeField] private bool isManifestedOnBoard;
 
-    // Axial hex coordinate used when manifested.
     [SerializeField] private AxialCoord boardPosition;
 
-    [SerializeField] private int currentMovementCapacity;
+    [SerializeField] private OptionalInt currentMovementCapacity;
 
-    // Optional mutable stats depending on card type.
     [SerializeField] private OptionalInt currentHp;
     [SerializeField] private OptionalInt currentDamage;
     [SerializeField] private OptionalInt currentRevenue;
 
-    // Spell-specific runtime values used by effect resolution and turn ticking.
     [SerializeField] private SpellEffectType spellEffectType;
     [SerializeField] private OptionalInt spellEffectPower;
     [SerializeField] private int remainingEffectDurationTurns;
 
-    // Attack readiness mainly used by character cards.
     [SerializeField] private bool isReadyToAttack;
 
     public CardData SourceCard => sourceCard;
     public CardZone CurrentZone => currentZone;
     public bool IsManifestedOnBoard => isManifestedOnBoard;
     public AxialCoord BoardPosition => boardPosition;
-    public int CurrentMovementCapacity => currentMovementCapacity;
+    public OptionalInt CurrentMovementCapacity => currentMovementCapacity;
     public OptionalInt CurrentHp => currentHp;
     public OptionalInt CurrentDamage => currentDamage;
     public OptionalInt CurrentRevenue => currentRevenue;
@@ -46,7 +38,6 @@ public class CardRuntimeState
     public int RemainingEffectDurationTurns => remainingEffectDurationTurns;
     public bool HasPersistentEffect => remainingEffectDurationTurns > 0;
 
-    // Builds a mutable state object from static card definition data.
     public CardRuntimeState(CardData sourceCard)
     {
         if (sourceCard == null)
@@ -55,7 +46,9 @@ public class CardRuntimeState
         }
 
         this.sourceCard = sourceCard;
-        currentMovementCapacity = sourceCard.MovementCapacity.HasValue ? sourceCard.MovementCapacity.Value : 0;
+        currentMovementCapacity = sourceCard.MovementCapacity.HasValue
+            ? new OptionalInt(sourceCard.MovementCapacity.Value)
+            : OptionalInt.None;
         currentHp = OptionalInt.None;
         currentDamage = OptionalInt.None;
         currentRevenue = OptionalInt.None;
@@ -66,7 +59,6 @@ public class CardRuntimeState
         InitializeCardSpecificState();
     }
 
-    // Copies type-specific initial values from the concrete card class.
     private void InitializeCardSpecificState()
     {
         if (sourceCard is CharacterCardData characterCard)
@@ -95,7 +87,6 @@ public class CardRuntimeState
         }
     }
 
-    // Moves card to a zone and clears board-only fields when leaving board.
     public void MoveToZone(CardZone zone)
     {
         currentZone = zone;
@@ -107,7 +98,6 @@ public class CardRuntimeState
         }
     }
 
-    // Places card onto board and records the board coordinate.
     public void ManifestOnBoard(AxialCoord position)
     {
         currentZone = CardZone.Board;
@@ -115,27 +105,39 @@ public class CardRuntimeState
         boardPosition = position;
     }
 
-    // Consumes movement points safely without allowing negative values.
     public void ConsumeMovement(int movementCost)
     {
-        currentMovementCapacity = Mathf.Max(0, currentMovementCapacity - Mathf.Max(0, movementCost));
+        if (!currentMovementCapacity.HasValue)
+        {
+            return;
+        }
+
+        currentMovementCapacity = new OptionalInt(
+            Mathf.Max(0, currentMovementCapacity.Value - Mathf.Max(0, movementCost)));
     }
 
-    // Resets movement back to definition value, usually at start of turn.
     public void ResetMovementFromDefinition()
     {
-        currentMovementCapacity = sourceCard == null
-            ? 0
-            : (sourceCard.MovementCapacity.HasValue ? sourceCard.MovementCapacity.Value : 0);
+        if (sourceCard == null)
+        {
+            currentMovementCapacity = OptionalInt.None;
+            return;
+        }
+
+        if (sourceCard.MovementCapacity.HasValue)
+        {
+            currentMovementCapacity = new OptionalInt(sourceCard.MovementCapacity.Value);
+            return;
+        }
+
+        currentMovementCapacity = OptionalInt.None;
     }
 
-    // Updates attack readiness flag after combat or turn transitions.
     public void SetAttackReady(bool ready)
     {
         isReadyToAttack = ready;
     }
 
-    // Decrements active spell duration by one turn, stopping at zero.
     public void ConsumeEffectDurationTurn()
     {
         if (remainingEffectDurationTurns <= 0)
@@ -146,7 +148,6 @@ public class CardRuntimeState
         remainingEffectDurationTurns--;
     }
 
-    // Resets spell duration from static card data.
     public void ResetEffectDurationFromDefinition()
     {
         if (sourceCard is SpellCardData spellCard)
@@ -158,7 +159,6 @@ public class CardRuntimeState
         remainingEffectDurationTurns = 0;
     }
 
-    // Applies non-negative damage to cards that have HP.
     public void ApplyDamage(int amount)
     {
         if (!currentHp.HasValue)
@@ -170,7 +170,6 @@ public class CardRuntimeState
         currentHp = new OptionalInt(Mathf.Max(0, currentHp.Value - clampedAmount));
     }
 
-    // Applies non-negative healing to cards that have HP.
     public void ApplyHeal(int amount)
     {
         if (!currentHp.HasValue)
@@ -182,7 +181,6 @@ public class CardRuntimeState
         currentHp = new OptionalInt(currentHp.Value + clampedAmount);
     }
 
-    // Adds non-negative revenue to cards that track revenue.
     public void AddRevenue(int amount)
     {
         if (!currentRevenue.HasValue)

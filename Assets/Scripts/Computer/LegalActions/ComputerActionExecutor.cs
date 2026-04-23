@@ -49,7 +49,7 @@ namespace FortGame.Computer
 
         private static bool ExecutePlacementAction(ComputerAction action, ComputerGameSnapshot snapshot)
         {
-            HexTile tile = snapshot.HexGrid.GetTile(action.target.tile.q, action.target.tile.r);
+            HexTile tile = snapshot.HexGrid.GetTile(action.target.tile);
             if (tile == null || !tile.IsEmpty())
             {
                 return false;

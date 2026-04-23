@@ -1,4 +1,3 @@
-// Serializable hex grid coordinate system using axial coordinates (q-column and r-row axes) for board tile positioning.
 using System;
 using UnityEngine;
 
@@ -18,14 +17,9 @@ public struct AxialCoord : IEquatable<AxialCoord>
     {
         return q == other.q && r == other.r;
     }
-
-
     public override int GetHashCode()
     {
-        unchecked
-        {
-            return (q * 397) ^ r;
-        }
+        return (q * 397) ^ r;
     }
 
     public override string ToString()

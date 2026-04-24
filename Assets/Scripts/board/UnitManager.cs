@@ -4,7 +4,8 @@ using UnityEngine;
 public class UnitManager : MonoBehaviour
 {
     private Unit selectedUnit;
-    private List<HexTile> highlightedTiles = new List<HexTile>();
+    private List<HexTile> moveTiles = new List<HexTile>();
+    private List<HexTile> attackTiles = new List<HexTile>();
     private HexGrid grid;
 
     void Start()
@@ -19,28 +20,34 @@ public class UnitManager : MonoBehaviour
             Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
             RaycastHit2D hit = Physics2D.Raycast(mousePos, Vector2.zero);
 
-            if (hit.collider != null)
-            {
-                HexTile clickedTile = hit.collider.GetComponent<HexTile>();
-                if (clickedTile == null) return;
+            if (hit.collider == null) return;
 
-                if (selectedUnit == null)
+            HexTile clickedTile = hit.collider.GetComponent<HexTile>();
+            if (clickedTile == null) return;
+
+            if (selectedUnit == null)
+            {
+                // Select a player unit
+                if (clickedTile.tileType == "unit" && clickedTile.owner == "player")
                 {
-                    if (clickedTile.tileType == "unit" && clickedTile.owner == "player")
-                    {
-                        SelectUnit(clickedTile);
-                    }
+                    SelectUnit(clickedTile);
+                }
+            }
+            else
+            {
+                // Attack an enemy in attack range
+                if (attackTiles.Contains(clickedTile) && clickedTile.owner == "enemy")
+                {
+                    AttackTarget(clickedTile);
+                }
+                // Move to an empty tile in move range
+                else if (moveTiles.Contains(clickedTile) && clickedTile.IsEmpty())
+                {
+                    MoveUnit(clickedTile);
                 }
                 else
                 {
-                    if (highlightedTiles.Contains(clickedTile) && clickedTile.IsEmpty())
-                    {
-                        MoveUnit(clickedTile);
-                    }
-                    else
-                    {
-                        DeselectUnit();
-                    }
+                    DeselectUnit();
                 }
             }
         }
@@ -51,11 +58,20 @@ public class UnitManager : MonoBehaviour
         selectedUnit = FindUnitOnTile(tile);
         if (selectedUnit == null) return;
 
-        highlightedTiles = HexUtils.GetTilesInRange(tile, selectedUnit.moveRange, grid);
-        foreach (HexTile t in highlightedTiles)
+        // Movement range (green)
+        moveTiles = HexUtils.GetTilesInRange(tile, selectedUnit.moveRange, grid);
+        foreach (HexTile t in moveTiles)
         {
             if (t.IsEmpty())
                 t.Highlight(Color.green);
+        }
+
+        // Attack range (red) — highlight enemies within attackRange
+        attackTiles = HexUtils.GetTilesInRange(tile, selectedUnit.attackRange, grid);
+        foreach (HexTile t in attackTiles)
+        {
+            if (t.owner == "enemy")
+                t.Highlight(Color.red);
         }
     }
 
@@ -67,13 +83,35 @@ public class UnitManager : MonoBehaviour
         DeselectUnit();
     }
 
+    void AttackTarget(HexTile targetTile)
+    {
+        Unit target = FindUnitOnTile(targetTile);
+        if (target != null)
+        {
+            target.health -= selectedUnit.attack;
+            Debug.Log($"Attacked! Target health: {target.health}");
+
+            if (target.health <= 0)
+            {
+                Debug.Log("Target died!");
+                target.Die();
+            }
+        }
+        else if (targetTile.tileType == "fort")
+        {
+            Debug.Log($"Attacked enemy fort!");
+            // Fort damage logic will go here later
+        }
+
+        DeselectUnit();
+    }
+
     void DeselectUnit()
     {
-        foreach (HexTile t in highlightedTiles)
-        {
-            t.ResetColor();
-        }
-        highlightedTiles.Clear();
+        foreach (HexTile t in moveTiles) t.ResetColor();
+        foreach (HexTile t in attackTiles) t.ResetColor();
+        moveTiles.Clear();
+        attackTiles.Clear();
         selectedUnit = null;
     }
 

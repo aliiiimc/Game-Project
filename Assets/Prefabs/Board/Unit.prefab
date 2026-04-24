@@ -104,9 +104,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0c41cbed2a6134544871f28a6e50cb08, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Unit
-  moveRange: 2
-  attackRange: 1
+  moveRange: 4
+  attackRange: 3
   health: 10
-  attack: 3
+  attack: 50
   owner: player
   currentTile: {fileID: 0}

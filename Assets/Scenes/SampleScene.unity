@@ -607,6 +607,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
   gameConfig: {fileID: 11400000, guid: 59e710db4ae71014c8b6817b25162ff2, type: 2}
+  cardLibrary: {fileID: 11400000, guid: 3c8b6bfd71b222746bc1483537a8ac4a, type: 2}
   player1:
     playerName: 
     money: 0
@@ -615,6 +616,7 @@ MonoBehaviour:
     handCount: 0
     deckCount: 0
     maxHandSize: 0
+    handCards: []
   player2:
     playerName: 
     money: 0
@@ -623,6 +625,7 @@ MonoBehaviour:
     handCount: 0
     deckCount: 0
     maxHandSize: 0
+    handCards: []
   currentPhase: 2
   currentPlayer:
     playerName: 
@@ -632,6 +635,7 @@ MonoBehaviour:
     handCount: 0
     deckCount: 0
     maxHandSize: 0
+    handCards: []
   hasBoughtThisTurn: 0
   winnerName: 
   discardCardsUsedThisTurn: 0

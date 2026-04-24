@@ -11,12 +11,21 @@ public class HexGrid : MonoBehaviour
 
     private Dictionary<AxialCoord, HexTile> tiles = new Dictionary<AxialCoord, HexTile>();
 
+    // void Start()
+    // {
+    //     GenerateGrid();
+    //     PlaceForts();
+    //     SpawnTestUnit();
+    // }
     void Start()
-    {
-        GenerateGrid();
-        PlaceForts();
-        SpawnTestUnit();
-    }
+{
+    GenerateGrid();
+    PlaceForts();
+    
+    // Test units for attack logic
+    SpawnUnit(unitPrefab, tiles[OffsetToAxial(3, 2)], "player");
+    SpawnUnit(unitPrefab, tiles[OffsetToAxial(3, 4)], "enemy");
+}
 
     void GenerateGrid()
     {
@@ -52,14 +61,24 @@ public class HexGrid : MonoBehaviour
         tiles[OffsetToAxial(midCol, gridHeight - 1)].SetAsFort(new Color(0.8f, 0.1f, 0.1f), "enemy");
     }
 
-    void SpawnTestUnit()
-    {
-        HexTile tile = tiles[OffsetToAxial(3, 2)];
-        GameObject unitObj = Instantiate(unitPrefab, tile.transform.position, Quaternion.identity);
-        Unit unit = unitObj.GetComponent<Unit>();
-        unit.owner = "player";
-        unit.PlaceOnTile(tile);
-    }
+    // void SpawnTestUnit()
+    // {
+    //     HexTile tile = tiles[OffsetToAxial(3, 2)];
+    //     GameObject unitObj = Instantiate(unitPrefab, tile.transform.position, Quaternion.identity);
+    //     Unit unit = unitObj.GetComponent<Unit>();
+    //     unit.owner = "player";
+    //     unit.PlaceOnTile(tile);
+    // }
+    public Unit SpawnUnit(GameObject prefab, HexTile tile, string owner)
+{
+    if (tile == null || !tile.IsEmpty()) return null;
+
+    GameObject unitObj = Instantiate(prefab, tile.transform.position, Quaternion.identity);
+    Unit unit = unitObj.GetComponent<Unit>();
+    unit.owner = owner;
+    unit.PlaceOnTile(tile);
+    return unit;
+}
 
     public HexTile GetTile(AxialCoord coord)
     {

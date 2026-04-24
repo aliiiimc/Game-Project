@@ -268,6 +268,28 @@ public sealed class CardDebugRunner : MonoBehaviour
             actionLog.Add($"ApplyHeal: {card.SourceCard.DisplayName} amount={Mathf.Max(0, amount)}.");
         }
 
+        public void ModifyDamage(CardRuntimeState card, int delta)
+        {
+            if (card == null)
+            {
+                return;
+            }
+
+            card.ModifyDamage(delta);
+            actionLog.Add($"ModifyDamage: {card.SourceCard.DisplayName} delta={delta}.");
+        }
+
+        public void ModifyMovement(CardRuntimeState card, int delta)
+        {
+            if (card == null)
+            {
+                return;
+            }
+
+            card.ModifyMovement(delta);
+            actionLog.Add($"ModifyMovement: {card.SourceCard.DisplayName} delta={delta}.");
+        }
+
         public void AddRevenue(string playerId, int amount)
         {
             if (string.IsNullOrWhiteSpace(playerId))
@@ -295,4 +317,5 @@ public sealed class CardDebugRunner : MonoBehaviour
             return moneyByPlayer.TryGetValue(playerId, out int value) ? value : 0;
         }
     }
+
 }

@@ -24,11 +24,6 @@ public sealed class DebugTargetValidator : MonoBehaviour, ICardTargetValidator
             return CardValidationResult.Invalid("NO_BOARD", "Board state reader is missing.");
         }
 
-        if (target.type == CardTargetType.Self)
-        {
-            return CardValidationResult.Valid();
-        }
-
         if (target.type == CardTargetType.Tile)
         {
             if (!context.Board.IsTileValid(target.tile))

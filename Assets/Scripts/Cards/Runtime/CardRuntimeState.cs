@@ -181,6 +181,26 @@ public class CardRuntimeState
         currentHp = new OptionalInt(currentHp.Value + clampedAmount);
     }
 
+    public void ModifyDamage(int delta)
+    {
+        if (!currentDamage.HasValue)
+        {
+            return;
+        }
+
+        currentDamage = new OptionalInt(Mathf.Max(0, currentDamage.Value + delta));
+    }
+
+    public void ModifyMovement(int delta)
+    {
+        if (!currentMovementCapacity.HasValue)
+        {
+            return;
+        }
+
+        currentMovementCapacity = new OptionalInt(Mathf.Max(0, currentMovementCapacity.Value + delta));
+    }
+
     public void AddRevenue(int amount)
     {
         if (!currentRevenue.HasValue)

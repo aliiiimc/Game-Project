@@ -1,8 +1,11 @@
 using UnityEngine;
+using FortGame.UI;
 
-public class GameManager : MonoBehaviour
+
+public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
+
 {
-    public GameConfig gameConfig;
+    public GameConfig gameConfig; // Config du jeu, voir Config/GameConfig.cs
     public CardLibrary cardLibrary;
 
     public PlayerState player1;
@@ -16,6 +19,10 @@ public class GameManager : MonoBehaviour
     public bool isBuyDecisionPending; // State (when the hand is full) in which the player has to choose between confirming a buy and 
                                       //be forced to discard, or simply cancel the buy 
     public CardRuntimeState selectedCardToDiscard;
+
+    public HandUI handUI; //HandUI gère l’affichage des cartes dans la main
+
+
 
 
 
@@ -53,7 +60,7 @@ public class GameManager : MonoBehaviour
         player2.handCards.Clear();
 
 
-        currentPlayer = player1;
+        
         winnerName = string.Empty;
 
         player1.money = gameConfig.startingMoney;
@@ -65,8 +72,11 @@ public class GameManager : MonoBehaviour
         player1.maxHandSize = gameConfig.maxHandSize;
         player2.maxHandSize = gameConfig.maxHandSize;
 
-        FillStartingHand(player1, gameConfig.startingHandSize);
+        FillStartingHand(player1, gameConfig.startingHandSize); // ajoute les cartes dans la logique handCards
         FillStartingHand(player2, gameConfig.startingHandSize);
+
+        currentPlayer = player1;
+        RefreshCurrentPlayerHandUI(); //Sync cards 
 
 
         currentPhase = GamePhase.Income;
@@ -89,10 +99,12 @@ public class GameManager : MonoBehaviour
             return;
         }
 
+        //Resets
         hasBoughtThisTurn = false;
         discardCardsUsedThisTurn = 0;
         isBuyDecisionPending = false;
         mustDiscardAfterBuy = false;
+        ClearSelectedCardToDiscard();
         currentPlayer.money += gameConfig.moneyPerTurn;
 
 
@@ -109,9 +121,10 @@ public class GameManager : MonoBehaviour
 
     private void SyncHandCount(PlayerState player)
     {
-        if (player1 == null) { return; }
-        player1.handCount = player1.handCards.Count;
+        if (player == null) { return; }
+        player.handCount = player.handCards.Count;
     }
+
 
 
     private bool IsHandFull(PlayerState player)
@@ -226,15 +239,30 @@ public class GameManager : MonoBehaviour
         }
 
         if (selectedCardToDiscard == null)  // To make sure the player selected a card to discard 
-        {Debug.Log("Select a card to discard first.");
-            return;}
+        {
+            Debug.Log("Select a card to discard first.");
+            return;
+        }
 
         if (!currentPlayer.handCards.Contains(selectedCardToDiscard)) // To make sure the player selected a card he has to discard
-        {Debug.Log("The selected card is not in the current player's hand.");
-            return;}
+        {
+            Debug.Log("The selected card is not in the current player's hand.");
+            return;
+        }
 
 
         RemoveCardFromHand(currentPlayer, selectedCardToDiscard);
+
+        if (handUI != null)//nettoie la logique
+        {
+            handUI.RemoveCardFromHand(selectedCardToDiscard);
+        }
+        if (handUI != null)//nettoie le visuel
+        {
+            handUI.ClearVisualSelection();
+        }
+
+
         currentPlayer.discardCount += 1;
         currentPlayer.money += gameConfig.discardMoneyReward;
         discardCardsUsedThisTurn += 1;
@@ -259,19 +287,22 @@ public class GameManager : MonoBehaviour
 
     public void SelectCardToDiscard(CardRuntimeState card)
     {
-        if (card == null){
+        if (card == null)
+        {
             Debug.Log("No card was selected for discard.");
             return;
         }
-        if (currentPlayer == null){
+        if (currentPlayer == null)
+        {
             Debug.Log("There is no current player.");
             return;
         }
 
-        if (!currentPlayer.handCards.Contains(card)){
+        if (!currentPlayer.handCards.Contains(card))
+        {
             Debug.Log("You can only select a card from the current player's hand.");
             return;
-        }   
+        }
 
         selectedCardToDiscard = card;
         Debug.Log("Selected a card to discard.");
@@ -348,6 +379,20 @@ public class GameManager : MonoBehaviour
     }
 
 
+    private void RefreshCurrentPlayerHandUI() // Sync le visuel des cartes quand changement de joueur 
+    {
+        if (handUI == null || currentPlayer == null)
+        {
+            return;
+        }
+
+        handUI.ClearHand();
+
+        for (int i = 0; i < currentPlayer.handCards.Count; i++)
+        {
+            handUI.AddCardToHand(currentPlayer.handCards[i]);
+        }
+    }
 
 
 
@@ -364,8 +409,13 @@ public class GameManager : MonoBehaviour
         if (player == null || card == null)
         { return; }
 
-        player.handCards.Add(card);
+        player.handCards.Add(card);//Logique 
         SyncHandCount(player);
+        if (player == currentPlayer && handUI != null)
+        {
+            handUI.AddCardToHand(card);//Visuel 
+        }
+
     }
 
     private void RemoveCardFromHand(PlayerState player, CardRuntimeState card)
@@ -478,6 +528,8 @@ public class GameManager : MonoBehaviour
         Debug.Log("Ending turn for " + currentPlayer.playerName);
 
         currentPlayer = currentPlayer == player1 ? player2 : player1;
+        RefreshCurrentPlayerHandUI(); //Sync cards
+
 
         Debug.Log("New current player: " + currentPlayer.playerName);
         currentPhase = GamePhase.Income;

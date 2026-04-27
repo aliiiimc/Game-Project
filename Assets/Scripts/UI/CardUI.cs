@@ -4,7 +4,7 @@ using UnityEngine.UI;
 using TMPro;
 
 
-namespace FortGame.UI 
+namespace FortGame.UI
 {
     /// <summary>
     /// Represents a single Card visually on the screen.
@@ -71,7 +71,7 @@ namespace FortGame.UI
         }
 
         // --- HOVER EFFECTS ---
-        
+
         public void OnPointerEnter(PointerEventData eventData)
         {
             // Simple hover effect: scale up slightly
@@ -94,8 +94,28 @@ namespace FortGame.UI
 
         public void OnPointerClick(PointerEventData eventData)
         {
-            bool selected = CardSelectionManager.Instance?.TrySelectCard(this) ?? false;
+            //Ali :
 
+            if (_gameManager != null && _gameManager.mustDiscardAfterBuy)
+            {
+                if (runtimeCard == null) // runtimeCard est la variable qui relie la carte affichée à la vraie carte du jeu.
+                {
+                    Debug.Log("This UI card has no runtime card linked.");
+                    return;
+                }
+
+                _gameManager.SelectCardToDiscard(runtimeCard);
+                if (_gameManager.handUI != null)
+                {
+                    _gameManager.handUI.ClearVisualSelection();
+                }
+                SetSelected(true);
+                Debug.Log("Card selected for forced discard.");
+                return;
+            }
+
+
+            bool selected = CardSelectionManager.Instance?.TrySelectCard(this) ?? false;
             if (selected)
             {
                 TargetSelectionManager.Instance?.ShowValidTargets(this);
@@ -123,7 +143,7 @@ namespace FortGame.UI
             if (canvasGroup != null)
             {
                 canvasGroup.alpha = 0.8f;
-                canvasGroup.blocksRaycasts = false; 
+                canvasGroup.blocksRaycasts = false;
             }
         }
 
@@ -144,7 +164,7 @@ namespace FortGame.UI
 
             // NOTE: Here is where you would check if it was dropped on a valid "Hex Tile" or "Play Zone".
             // Since we don't have Abdo's Hex Board yet, we will just snap it back to the hand.
-            
+
             bool validDrop = false; // Placeholder
 
             if (!validDrop)

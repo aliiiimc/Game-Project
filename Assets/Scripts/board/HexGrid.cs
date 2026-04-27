@@ -8,28 +8,24 @@ public class HexGrid : MonoBehaviour
     public int gridWidth = 7;
     public int gridHeight = 5;
     public float hexSize = 0.5f;
+    public bool spawnDebugUnits = true;
 
     private Dictionary<AxialCoord, HexTile> tiles = new Dictionary<AxialCoord, HexTile>();
 
-    // void Start()
-    // {
-    //     GenerateGrid();
-    //     PlaceForts();
-    //     SpawnTestUnit();
-    // }
     void Start()
-{
-    GenerateGrid();
-    PlaceForts();
-    
-    // Test units for attack logic
-    SpawnUnit(unitPrefab, tiles[OffsetToAxial(3, 2)], "player");
-    SpawnUnit(unitPrefab, tiles[OffsetToAxial(3, 4)], "enemy");
-}
+    {
+        GenerateGrid();
+        PlaceForts();
+
+        if (spawnDebugUnits)
+        {
+            SpawnHorizontalDebugUnits();
+        }
+    }
 
     void GenerateGrid()
     {
-        int midRow = gridHeight / 2;
+        int midCol = gridWidth / 2;
 
         for (int row = 0; row < gridHeight; row++)
         {
@@ -45,45 +41,55 @@ public class HexGrid : MonoBehaviour
                 tile.coord = coord;
                 tiles[coord] = tile;
 
-                SpriteRenderer sr = hex.GetComponent<SpriteRenderer>();
-                if (row < midRow)
-                    sr.color = new Color(0.6f, 0.8f, 1f);
-                else
-                    sr.color = new Color(1f, 0.7f, 0.7f);
+                Color sideColor = col < midCol
+                    ? new Color(0.6f, 0.8f, 1f)
+                    : new Color(1f, 0.7f, 0.7f);
+
+                tile.SetBaseColor(sideColor);
             }
         }
     }
 
     void PlaceForts()
     {
-        int midCol = gridWidth / 2;
-        tiles[OffsetToAxial(midCol, 0)].SetAsFort(new Color(0.1f, 0.2f, 0.8f), "player");
-        tiles[OffsetToAxial(midCol, gridHeight - 1)].SetAsFort(new Color(0.8f, 0.1f, 0.1f), "enemy");
+        int midRow = gridHeight / 2;
+        tiles[OffsetToAxial(0, midRow)].SetAsFort(new Color(0.1f, 0.2f, 0.8f), "player");
+        tiles[OffsetToAxial(gridWidth - 1, midRow)].SetAsFort(new Color(0.8f, 0.1f, 0.1f), "enemy");
     }
 
-    // void SpawnTestUnit()
-    // {
-    //     HexTile tile = tiles[OffsetToAxial(3, 2)];
-    //     GameObject unitObj = Instantiate(unitPrefab, tile.transform.position, Quaternion.identity);
-    //     Unit unit = unitObj.GetComponent<Unit>();
-    //     unit.owner = "player";
-    //     unit.PlaceOnTile(tile);
-    // }
-    public Unit SpawnUnit(GameObject prefab, HexTile tile, string owner)
-{
-    if (tile == null || !tile.IsEmpty()) return null;
+    void SpawnHorizontalDebugUnits()
+    {
+        int midRow = gridHeight / 2;
+        int playerCol = Mathf.Min(1, gridWidth - 1);
+        int enemyCol = Mathf.Max(gridWidth - 2, 0);
 
-    GameObject unitObj = Instantiate(prefab, tile.transform.position, Quaternion.identity);
-    Unit unit = unitObj.GetComponent<Unit>();
-    unit.owner = owner;
-    unit.PlaceOnTile(tile);
-    return unit;
-}
+        SpawnUnit(unitPrefab, GetTileByOffset(playerCol, midRow), "player");
+        SpawnUnit(unitPrefab, GetTileByOffset(enemyCol, midRow), "enemy");
+    }
+
+    public Unit SpawnUnit(GameObject prefab, HexTile tile, string owner)
+    {
+        if (prefab == null || tile == null || !tile.IsEmpty())
+        {
+            return null;
+        }
+
+        GameObject unitObj = Instantiate(prefab, tile.transform.position, Quaternion.identity, transform);
+        Unit unit = unitObj.GetComponent<Unit>();
+        unit.owner = owner;
+        unit.PlaceOnTile(tile);
+        return unit;
+    }
 
     public HexTile GetTile(AxialCoord coord)
     {
         tiles.TryGetValue(coord, out HexTile tile);
         return tile;
+    }
+
+    public HexTile GetTileByOffset(int col, int row)
+    {
+        return GetTile(OffsetToAxial(col, row));
     }
 
     // Converts visual grid column/row (odd-r offset) to axial coordinates.

@@ -34,6 +34,7 @@ The UI should highlight valid targets, but the code must also reject invalid tar
   - `CharacterCardData.maxHp` for health
   - `CharacterCardData.attackDamage` for attack
   - `CharacterCardData.unitMovementCapacity` for movement range
+- Current implementation note: Character cards can now create visible `Unit(Clone)` objects on valid deployment tiles
 
 #### World Effect Cards
 - Buildings and resource fields must be placed on empty tiles
@@ -74,12 +75,12 @@ We start the game like this:
 Destroy the opponent's Fort.
 
 ### Movement Values
-Movement is already represented in card data, but it still needs final board integration.
+Movement is represented in card data and is part of the Character spawn path.
 
 - Character cards use `unitMovementCapacity`
 - Runtime cards copy that value into `CardRuntimeState.CurrentMovementCapacity`
 - Board units currently move through `Unit.moveRange`
-- The next integration step is to copy the Character card movement value into the spawned `Unit.moveRange`
+- When a Character card spawns a unit, the spawned `Unit.moveRange` should copy the runtime/card movement value
 
 ---
 
@@ -243,6 +244,14 @@ Character card play target:
 Click Character card -> highlight valid deployment tiles -> click empty valid tile -> spawn unit -> remove card from hand
 ```
 
+Current v1 status:
+
+- valid Character target highlighting is implemented for the player
+- the same Character placement rule is shared with the AI validator
+- valid hover highlights stay visible while the mouse passes over a highlighted tile
+- playing a Character card on a valid tile creates a visible unit using the card's chibi board sprite
+- next checks: spawned unit HP, attack, movement, owner, and summon attack readiness
+
 World Effect card play target:
 
 ```text
@@ -348,8 +357,8 @@ Assets/
 - [ ] Fort placed, has HP, and can take damage
 - [ ] Turn system working in local play
 - [ ] Cards can be played onto the board
-- [ ] Character cards can spawn units only in the owner's deployment zone
-- [ ] Spawned units use the card's chibi board sprite
+- [x] Character cards can spawn units only in the owner's deployment zone
+- [x] Spawned units use the card's chibi board sprite
 - [ ] Spawned units use the card's movement value
 - [ ] World Effect buildings place only in the owner's half
 - [ ] Spell cards validate correct unit/Fort targets

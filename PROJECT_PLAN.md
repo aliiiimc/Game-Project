@@ -62,6 +62,7 @@ The UI should only highlight valid targets, but the real validation must also be
   - Player 1 can spawn only in the first 2 columns on the blue side
   - Player 2 can spawn only in the last 2 columns on the red side
   - spawned units use the card's board sprite and movement value
+  - current v1 implementation can create visible board units from played Character cards
 - World Effect cards:
   - building/resource/hazard placement must be on an empty tile
   - v1 buildings and resource fields can be placed anywhere in the owner's half of the board
@@ -78,7 +79,7 @@ Movement rule note:
 
 - Character cards already have `unitMovementCapacity` in data.
 - Runtime cards already copy movement into `CardRuntimeState.CurrentMovementCapacity`.
-- Board movement still uses `Unit.moveRange`, so the next integration step is to copy card movement into the spawned `Unit`.
+- Board movement uses `Unit.moveRange`, so spawned units must copy card movement into `Unit.moveRange`.
 
 ## 3. Team Roles
 
@@ -279,6 +280,7 @@ Goal: make units work.
 - Fatine:
   - character cards fully playable
   - spell cards fully playable
+  - verify spawned Character cards copy HP, attack, movement, owner, and chibi sprite correctly
 
 ### Week 4
 Goal: make full matches possible.
@@ -331,6 +333,8 @@ Use this checklist often.
 - World Effect buildings only place in the owner's half of the board
 - Spell cards only target valid units or Forts for their effect type
 - spawned units use the Character card's movement value
+- spawned Character units use the Character card's board sprite
+- newly spawned Character units follow the team's summon attack readiness rule
 - units cannot move to illegal hexes
 - attacks only happen in valid range
 - dead units are removed correctly

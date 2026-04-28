@@ -19,21 +19,21 @@ public sealed class SummonCardEffect : MonoBehaviour, ICardEffect
             return failure;
         }
 
-        if (target.type != CardTargetType.Tile)
+        if (!CardEffectGuards.TryRequireTargetType(target, CardTargetType.Tile, "Summon effect needs a tile target.", out failure))
         {
-            return CardEffectResult.Failure("WRONG_TARGET", "Summon effect needs a tile target.");
+            return failure;
         }
 
         if (context.Board != null)
         {
-            if (!context.Board.IsTileValid(target.tile))
+            if (!CardEffectGuards.TryRequireBoardAndValidTile(context, target.tile, "Target tile is invalid.", out failure))
             {
-                return CardEffectResult.Failure("INVALID_TILE", "Target tile is invalid.");
+                return failure;
             }
 
-            if (requireTileToBeEmpty && context.Board.IsTileOccupied(target.tile))
+            if (requireTileToBeEmpty && !CardEffectGuards.TryRequireTileEmpty(context, target.tile, "Target tile is occupied.", out failure))
             {
-                return CardEffectResult.Failure("OCCUPIED_TILE", "Target tile is occupied.");
+                return failure;
             }
         }
 

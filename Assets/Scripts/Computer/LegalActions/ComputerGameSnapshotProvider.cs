@@ -23,19 +23,24 @@ namespace FortGame.Computer
                 ? computer.hexGrid
                 : Object.FindFirstObjectByType<HexGrid>();
 
-            if (gameManager == null || hexGrid == null || computer.playerState == null)
+            if (gameManager == null || hexGrid == null || (computer.playerState == null && gameManager.player2 == null))
             {
                 return null;
             }
 
-            PlayerState actingPlayer = computer.playerState;
+            // Rabie: build AI decisions from the real enemy player state instead of only debug cards.
+            PlayerState actingPlayer = ResolveActingPlayer(gameManager, computer);
             PlayerState opponentPlayer = ResolveOpponent(gameManager, actingPlayer);
 
             string actingPlayerKey = ResolvePlayerKey(gameManager, actingPlayer, "enemy");
             string opponentPlayerKey = ResolvePlayerKey(gameManager, opponentPlayer, "player");
 
             List<CardRuntimeState> handCards = new List<CardRuntimeState>();
-            if (computer.debugHandCards != null)
+            if (actingPlayer.handCards != null && actingPlayer.handCards.Count > 0)
+            {
+                handCards.AddRange(actingPlayer.handCards);
+            }
+            else if (computer.debugHandCards != null)
             {
                 for (int i = 0; i < computer.debugHandCards.Count; i++)
                 {
@@ -63,6 +68,17 @@ namespace FortGame.Computer
                 opponentPlayerKey,
                 handCards,
                 new HexGridBoardStateReader(hexGrid));
+        }
+
+        private static PlayerState ResolveActingPlayer(GameManager gameManager, ComputerPlayer computer)
+        {
+            if (gameManager.player2 != null)
+            {
+                computer.playerState = gameManager.player2;
+                return gameManager.player2;
+            }
+
+            return computer.playerState;
         }
 
         private static PlayerState ResolveOpponent(GameManager gameManager, PlayerState actingPlayer)

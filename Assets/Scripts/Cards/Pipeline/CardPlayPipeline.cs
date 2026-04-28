@@ -12,7 +12,6 @@ public sealed class CardPlayPipeline : ICardPlayPipeline
                 "Card play request is missing.",
                 emptyValidation,
                 emptyEffect,
-                costWasSpent: false,
                 finalZone: CardZone.Hand);
         }
 
@@ -23,7 +22,6 @@ public sealed class CardPlayPipeline : ICardPlayPipeline
                 "Source card is missing.",
                 emptyValidation,
                 emptyEffect,
-                costWasSpent: false,
                 finalZone: CardZone.Hand);
         }
 
@@ -34,7 +32,6 @@ public sealed class CardPlayPipeline : ICardPlayPipeline
                 "Target validator is missing.",
                 emptyValidation,
                 emptyEffect,
-                costWasSpent: false,
                 finalZone: request.SourceCard.CurrentZone);
         }
 
@@ -45,7 +42,6 @@ public sealed class CardPlayPipeline : ICardPlayPipeline
                 "Card effect is missing.",
                 emptyValidation,
                 emptyEffect,
-                costWasSpent: false,
                 finalZone: request.SourceCard.CurrentZone);
         }
 
@@ -56,7 +52,6 @@ public sealed class CardPlayPipeline : ICardPlayPipeline
                 "State writer is missing.",
                 emptyValidation,
                 emptyEffect,
-                costWasSpent: false,
                 finalZone: request.SourceCard.CurrentZone);
         }
 
@@ -75,20 +70,6 @@ public sealed class CardPlayPipeline : ICardPlayPipeline
                 validationResult.Message,
                 validationResult,
                 emptyEffect,
-                costWasSpent: false,
-                finalZone: request.SourceCard.CurrentZone);
-        }
-
-        int safeCost = request.SourceCard.SourceCard.cost < 0 ? 0 : request.SourceCard.SourceCard.cost;
-        bool spendSucceeded = request.Writer.TrySpendCost(request.ActingPlayerId, safeCost);
-        if (!spendSucceeded)
-        {
-            return CardPlayResult.Failure(
-                "INSUFFICIENT_FUNDS",
-                "Player does not have enough money to play this card.",
-                validationResult,
-                emptyEffect,
-                costWasSpent: false,
                 finalZone: request.SourceCard.CurrentZone);
         }
 
@@ -104,11 +85,10 @@ public sealed class CardPlayPipeline : ICardPlayPipeline
         if (!effectResult.Succeeded)
         {
             return CardPlayResult.Failure(
-                "EFFECT_FAILED_AFTER_SPEND",
+                "EFFECT_FAILED",
                 effectResult.Message,
                 validationResult,
                 effectResult,
-                costWasSpent: true,
                 finalZone: request.SourceCard.CurrentZone);
         }
 
@@ -121,7 +101,6 @@ public sealed class CardPlayPipeline : ICardPlayPipeline
         return CardPlayResult.Success(
             validationResult,
             effectResult,
-            costWasSpent: true,
             finalZone: finalZone,
             message: "Card play completed.");
     }

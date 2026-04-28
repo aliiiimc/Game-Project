@@ -1,4 +1,4 @@
-public sealed class CardValidationContext
+public class BaseCardContext
 {
     public string ActingPlayerKey;
     public string OpponentPlayerKey;
@@ -15,4 +15,13 @@ public sealed class CardValidationContext
         get => OpponentPlayerKey;
         set => OpponentPlayerKey = value;
     }
+}
+
+public sealed class CardValidationContext : BaseCardContext
+{
+}
+
+public sealed class CardEffectContext : BaseCardContext
+{
+    public ICardStateWriter Writer;
 }

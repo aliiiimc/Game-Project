@@ -49,6 +49,15 @@ public class HexTile : MonoBehaviour
         spriteRenderer.color = originalColor;
     }
 
+    public void PlaceWorldEffect(string effectOwner)
+    {
+        // Rabie: world effect cards reserve the tile without pretending to be units.
+        tileType = "worldEffect";
+        owner = effectOwner;
+        originalColor = new Color(0.4f, 0.8f, 0.3f);
+        spriteRenderer.color = originalColor;
+    }
+
     public void RemoveUnit()
     {
         tileType = "empty";

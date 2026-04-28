@@ -14,6 +14,8 @@ namespace FortGame.UI
         private List<HexTile> _highlightedTiles = new List<HexTile>();
         private HexGrid _hexGrid;
         private HUDManager _hudManager;
+        private GameManager _gameManager;
+        private CardPlayService _cardPlayService;
 
         private void Awake()
         {
@@ -26,6 +28,8 @@ namespace FortGame.UI
             Instance = this;
             _hexGrid = FindFirstObjectByType<HexGrid>();
             _hudManager = FindFirstObjectByType<HUDManager>();
+            _gameManager = FindFirstObjectByType<GameManager>();
+            _cardPlayService = FindFirstObjectByType<CardPlayService>();
         }
 
         /// <summary>
@@ -43,14 +47,42 @@ namespace FortGame.UI
 
             CardSelectionManager.Instance?.EnterTargetSelection();
 
-            // For now, highlight all empty tiles as valid targets
-            // In Week 3, this will integrate with validator from card data
+            if (_hexGrid == null)
+            {
+                _hexGrid = FindFirstObjectByType<HexGrid>();
+            }
+
+            if (_cardPlayService == null)
+            {
+                _cardPlayService = FindFirstObjectByType<CardPlayService>();
+            }
+
+            if (_hexGrid == null || _cardPlayService == null || card.runtimeCard == null)
+            {
+                _hudManager?.ShowError("Target selection is not ready.");
+                return;
+            }
+
+            string actingPlayerKey = ResolveCurrentPlayerKey();
             for (int r = 0; r < _hexGrid.gridHeight; r++)
             {
                 for (int q = 0; q < _hexGrid.gridWidth; q++)
                 {
                     HexTile tile = _hexGrid.GetTile(new AxialCoord(q, r));
-                    if (tile != null && tile.IsEmpty())
+                    if (tile == null)
+                    {
+                        continue;
+                    }
+
+                    CardTarget target = new CardTarget
+                    {
+                        type = CardTargetType.Tile,
+                        tile = new AxialCoord(tile.coord.q, tile.coord.r)
+                    };
+
+                    // Rabie: highlight only targets that the real card play pipeline says are legal.
+                    CardPlayResult result = _cardPlayService.CanPlayCard(card.runtimeCard, actingPlayerKey, target);
+                    if (result.Succeeded)
                     {
                         tile.Highlight(new Color(0.2f, 1f, 0.2f, 1f)); // Green
                         _highlightedTiles.Add(tile);
@@ -106,6 +138,8 @@ namespace FortGame.UI
             };
 
             selectionMgr.ConfirmSelection(target);
+            // Rabie: send the confirmed tile to PlayerInputController so the selected card is actually played.
+            PlayerInputController.Instance?.OnTargetConfirmed(target);
 
             Debug.Log($"[TargetSelectionManager] Target confirmed at ({targetTile.coord.q}, {targetTile.coord.r})");
 
@@ -120,6 +154,31 @@ namespace FortGame.UI
         public void OnSelectionCancelled()
         {
             ClearHighlights();
+        }
+
+        private string ResolveCurrentPlayerKey()
+        {
+            if (_gameManager == null)
+            {
+                _gameManager = FindFirstObjectByType<GameManager>();
+            }
+
+            if (_gameManager == null || _gameManager.currentPlayer == null)
+            {
+                return string.Empty;
+            }
+
+            if (ReferenceEquals(_gameManager.currentPlayer, _gameManager.player1))
+            {
+                return PlayerKeyResolver.PlayerOneKey;
+            }
+
+            if (ReferenceEquals(_gameManager.currentPlayer, _gameManager.player2))
+            {
+                return PlayerKeyResolver.PlayerTwoKey;
+            }
+
+            return _gameManager.currentPlayer.playerName;
         }
     }
 }

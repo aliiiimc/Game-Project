@@ -17,6 +17,8 @@ MonoBehaviour:
   handDeckSprite: {fileID: 0}
   manifestedSprite: {fileID: 0}
   description: 
+  validatorId: target.rules.reusable
+  effectId: effect.summon
   category: 0
   structureHp:
     hasValue: 0

@@ -58,7 +58,10 @@ namespace FortGame.Computer
         public void StartTurn()
         {
             if (_isMyTurn) return;
-            
+
+            // Rabie: use the real GameManager player2 state before the AI starts thinking.
+            SyncPlayerStateWithGameManager();
+
             _isMyTurn = true;
             Debug.Log($"[{playerState.playerName}] Turn Started!");
             
@@ -102,9 +105,30 @@ namespace FortGame.Computer
         {
             _isMyTurn = false;
             Debug.Log($"[{playerState.playerName}] Ended Turn.");
-            
-            // TODO: Notify the Game Flow Manager that our turn is complete.
-            // GameFlowManager.Instance.EndTurn(this);
+
+            if (gameManager == null)
+            {
+                gameManager = FindFirstObjectByType<GameManager>();
+            }
+
+            if (gameManager != null && (gameManager.currentPhase == GamePhase.Play || gameManager.currentPhase == GamePhase.Attack))
+            {
+                // Rabie: tell the main game flow that the computer finished its turn.
+                gameManager.EndTurn();
+            }
+        }
+
+        private void SyncPlayerStateWithGameManager()
+        {
+            if (gameManager == null)
+            {
+                gameManager = FindFirstObjectByType<GameManager>();
+            }
+
+            if (gameManager != null && gameManager.player2 != null)
+            {
+                playerState = gameManager.player2;
+            }
         }
     }
 }

@@ -26,25 +26,49 @@ namespace FortGame.Computer
                 return false;
             }
 
-            snapshot.ActingPlayer.money -= actionCost;
-            if (snapshot.ActingPlayer.handCount > 0)
-            {
-                snapshot.ActingPlayer.handCount -= 1;
-            }
-
+            // Rabie: execute first, then spend money/remove the card only if the action worked.
+            bool succeeded;
             switch (action.type)
             {
                 case ActionType.PlayUnitCard:
                 case ActionType.PlayWorldEffectCard:
-                    return ExecutePlacementAction(action, snapshot);
+                    succeeded = ExecutePlacementAction(action, snapshot);
+                    break;
 
                 case ActionType.PlaySpellCard:
-                    return ExecuteSpellAction(action, snapshot);
+                    succeeded = ExecuteSpellAction(action, snapshot);
+                    break;
 
                 default:
                     Debug.LogWarning($"[ComputerActionExecutor] Unsupported action type: {action.type}");
                     return false;
             }
+
+            if (!succeeded)
+            {
+                return false;
+            }
+
+            snapshot.ActingPlayer.money -= actionCost;
+            if (action.sourceCard != null && snapshot.ActingPlayer.handCards != null)
+            {
+                snapshot.ActingPlayer.handCards.Remove(action.sourceCard);
+                if (!action.sourceCard.IsManifestedOnBoard)
+                {
+                    action.sourceCard.MoveToZone(CardZone.Discard);
+                }
+
+                if (snapshot.GameManager != null && ReferenceEquals(snapshot.GameManager.currentPlayer, snapshot.ActingPlayer) && snapshot.GameManager.handUI != null)
+                {
+                    snapshot.GameManager.handUI.RemoveCardFromHand(action.sourceCard);
+                }
+            }
+
+            snapshot.ActingPlayer.handCount = snapshot.ActingPlayer.handCards != null
+                ? snapshot.ActingPlayer.handCards.Count
+                : Mathf.Max(0, snapshot.ActingPlayer.handCount - 1);
+
+            return true;
         }
 
         private static bool ExecutePlacementAction(ComputerAction action, ComputerGameSnapshot snapshot)
@@ -55,7 +79,16 @@ namespace FortGame.Computer
                 return false;
             }
 
+            if (action.type == ActionType.PlayWorldEffectCard)
+            {
+                // Rabie: world effects mark the tile as an effect, not as a normal unit.
+                tile.PlaceWorldEffect(snapshot.ActingPlayerKey);
+                action.sourceCard?.ManifestOnBoard(action.target.tile);
+                return true;
+            }
+
             tile.PlaceUnit(snapshot.ActingPlayerKey);
+            action.sourceCard?.ManifestOnBoard(action.target.tile);
             return true;
         }
 

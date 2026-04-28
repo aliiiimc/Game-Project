@@ -1,4 +1,3 @@
-using FortGame.Computer;
 using UnityEngine;
 
 namespace FortGame.UI
@@ -14,7 +13,8 @@ namespace FortGame.UI
         private TargetSelectionManager _targetSelectionMgr;
         private HUDManager _hudManager;
         private GameManager _gameManager;
-        private ComputerPlayer _computerPlayer;
+        private CardPlayService _cardPlayService;
+        private HexGrid _hexGrid;
 
         private void Awake()
         {
@@ -29,7 +29,8 @@ namespace FortGame.UI
             _targetSelectionMgr = FindFirstObjectByType<TargetSelectionManager>();
             _hudManager = FindFirstObjectByType<HUDManager>();
             _gameManager = FindFirstObjectByType<GameManager>();
-            _computerPlayer = FindFirstObjectByType<ComputerPlayer>();
+            _cardPlayService = FindFirstObjectByType<CardPlayService>();
+            _hexGrid = FindFirstObjectByType<HexGrid>();
         }
 
         private void Update()
@@ -67,61 +68,122 @@ namespace FortGame.UI
                 return;
             }
 
-            // Validate target using legal action service
-            if (_computerPlayer == null)
+            if (_gameManager == null)
             {
-                _computerPlayer = FindFirstObjectByType<ComputerPlayer>();
+                _gameManager = FindFirstObjectByType<GameManager>();
             }
 
-            if (_computerPlayer == null)
+            if (_cardPlayService == null)
             {
-                _hudManager?.ShowError("No ComputerPlayer found for legal-action validation.");
-                Debug.LogWarning("[PlayerInputController] ComputerPlayer missing; cannot validate legal actions.");
+                _cardPlayService = FindFirstObjectByType<CardPlayService>();
+            }
+
+            if (_gameManager == null || _cardPlayService == null)
+            {
+                _hudManager?.ShowError("Card play system is not ready.");
+                Debug.LogWarning("[PlayerInputController] Missing GameManager or CardPlayService.");
                 return;
             }
 
-            bool targetIsLegal = false;
-            var legalActions = LegalActionService.Instance.GetLegalActions(_computerPlayer);
-            
-            foreach (var action in legalActions)
+            CardRuntimeState runtimeCard = selectedCard.runtimeCard;
+            if (runtimeCard == null || runtimeCard.SourceCard == null)
             {
-                if (action.sourceCardName == selectedCard.CardName && 
-                    action.target.type == target.type && 
-                    action.target.tile.q == target.tile.q &&
-                    action.target.tile.r == target.tile.r)
-                {
-                    targetIsLegal = true;
-                    ExecuteAction(action);
-                    break;
-                }
-            }
-
-            if (!targetIsLegal)
-            {
-                _hudManager?.ShowError("Invalid target for this card.");
-                Debug.Log("[PlayerInputController] Target validation failed.");
-            }
-        }
-
-        private void ExecuteAction(FortGame.Computer.ComputerAction action)
-        {
-            if (action == null)
-            {
+                _hudManager?.ShowError("Selected card is missing game data.");
+                Debug.LogWarning("[PlayerInputController] Selected CardUI has no runtime card.");
                 return;
             }
 
-            var executor = new ComputerActionExecutor();
-            var snapshotProvider = new ComputerGameSnapshotProvider();
-            
-            // Create snapshot and execute
-            // Note: This is temporary until full card effect pipeline is ready from Fatine
-            
-            Debug.Log($"[PlayerInputController] Executing action: {action.actionName}");
+            PlayerState actingPlayer = _gameManager.currentPlayer;
+            if (actingPlayer == null || actingPlayer.handCards == null || !actingPlayer.handCards.Contains(runtimeCard))
+            {
+                _hudManager?.ShowError("Selected card is not in the current player's hand.");
+                Debug.LogWarning("[PlayerInputController] Selected card is not owned by the current player.");
+                return;
+            }
+
+            int cardCost = runtimeCard.SourceCard.cost;
+            if (actingPlayer.money < cardCost)
+            {
+                _hudManager?.ShowError("Not enough money to play this card.");
+                Debug.Log("[PlayerInputController] Current player has insufficient money.");
+                return;
+            }
+
+            // Rabie: play the selected UI card through the real card pipeline for the current player.
+            string actingPlayerKey = ResolveCurrentPlayerKey();
+            CardPlayResult result = _cardPlayService.PlayCard(runtimeCard, actingPlayerKey, target);
+            if (!result.Succeeded)
+            {
+                _hudManager?.ShowError(result.Message);
+                Debug.Log($"[PlayerInputController] Card play failed: {result.ReasonCode} - {result.Message}");
+                return;
+            }
+
+            actingPlayer.money -= cardCost;
+            // Rabie: update the board tile visually after the card pipeline accepts the play.
+            ApplyBoardVisual(runtimeCard, actingPlayerKey, target);
+
+            if (_gameManager.handUI != null)
+            {
+                _gameManager.handUI.RemoveCardFromHand(runtimeCard);
+            }
+
+            _hudManager?.ShowError("");
+            _hudManager?.UpdateHUD(actingPlayer);
+            Debug.Log($"[PlayerInputController] Played {runtimeCard.SourceCard.DisplayName} on {target.type}.");
 
             _cardSelectionMgr.ClearSelection();
             _targetSelectionMgr?.OnSelectionCancelled();
+        }
 
-            _hudManager?.ShowError(""); // Clear any error
+        private string ResolveCurrentPlayerKey()
+        {
+            if (_gameManager == null || _gameManager.currentPlayer == null)
+            {
+                return string.Empty;
+            }
+
+            if (ReferenceEquals(_gameManager.currentPlayer, _gameManager.player1))
+            {
+                return PlayerKeyResolver.PlayerOneKey;
+            }
+
+            if (ReferenceEquals(_gameManager.currentPlayer, _gameManager.player2))
+            {
+                return PlayerKeyResolver.PlayerTwoKey;
+            }
+
+            return _gameManager.currentPlayer.playerName;
+        }
+
+        private void ApplyBoardVisual(CardRuntimeState runtimeCard, string actingPlayerKey, CardTarget target)
+        {
+            if (target.type != CardTargetType.Tile || runtimeCard?.SourceCard == null)
+            {
+                return;
+            }
+
+            if (_hexGrid == null)
+            {
+                _hexGrid = FindFirstObjectByType<HexGrid>();
+            }
+
+            HexTile tile = _hexGrid != null ? _hexGrid.GetTile(target.tile) : null;
+            if (tile == null)
+            {
+                return;
+            }
+
+            if (runtimeCard.SourceCard is WorldEffectCardData)
+            {
+                tile.PlaceWorldEffect(actingPlayerKey);
+                return;
+            }
+
+            if (runtimeCard.SourceCard is CharacterCardData)
+            {
+                tile.PlaceUnit(actingPlayerKey);
+            }
         }
     }
 }

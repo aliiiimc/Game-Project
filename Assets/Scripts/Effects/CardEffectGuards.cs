@@ -41,4 +41,53 @@ public static class CardEffectGuards
         failure = default;
         return true;
     }
+
+    public static bool TryRequireTargetType(CardTarget target, CardTargetType requiredType, string message, out CardEffectResult failure)
+    {
+        if (target.type != requiredType)
+        {
+            string fallbackMessage = $"Target type must be '{requiredType}'.";
+            failure = CardEffectResult.Failure("WRONG_TARGET", string.IsNullOrWhiteSpace(message) ? fallbackMessage : message);
+            return false;
+        }
+
+        failure = default;
+        return true;
+    }
+
+    public static bool TryRequireBoardAndValidTile(CardEffectContext context, AxialCoord tile, string invalidTileMessage, out CardEffectResult failure)
+    {
+        if (context?.Board == null)
+        {
+            failure = CardEffectResult.Failure("NO_BOARD", "Board state reader is missing.");
+            return false;
+        }
+
+        if (!context.Board.IsTileValid(tile))
+        {
+            failure = CardEffectResult.Failure("INVALID_TILE", string.IsNullOrWhiteSpace(invalidTileMessage) ? "Target tile is invalid." : invalidTileMessage);
+            return false;
+        }
+
+        failure = default;
+        return true;
+    }
+
+    public static bool TryRequireTileEmpty(CardEffectContext context, AxialCoord tile, string occupiedMessage, out CardEffectResult failure)
+    {
+        if (context?.Board == null)
+        {
+            failure = CardEffectResult.Failure("NO_BOARD", "Board state reader is missing.");
+            return false;
+        }
+
+        if (context.Board.IsTileOccupied(tile))
+        {
+            failure = CardEffectResult.Failure("OCCUPIED_TILE", string.IsNullOrWhiteSpace(occupiedMessage) ? "Target tile is occupied." : occupiedMessage);
+            return false;
+        }
+
+        failure = default;
+        return true;
+    }
 }

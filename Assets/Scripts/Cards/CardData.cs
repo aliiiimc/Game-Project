@@ -13,6 +13,10 @@ public abstract class CardData : ScriptableObject
     [TextArea]
     public string description;
 
+    [Header("Pipeline Mapping")]
+    public string validatorId = "target.rules.reusable";
+    public string effectId;
+
     public abstract OptionalInt MovementCapacity { get; }
     public string DisplayName => string.IsNullOrWhiteSpace(cardName) ? name : cardName;
 

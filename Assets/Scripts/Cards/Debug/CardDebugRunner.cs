@@ -118,7 +118,7 @@ public sealed class CardDebugRunner : MonoBehaviour
             }
             else
             {
-                Debug.Log($"[CardDebugRunner] Play PASSED | zone={playResult.FinalZone} | costSpent={playResult.CostWasSpent} | damage={playResult.EffectResult.DamageDealt} | heal={playResult.EffectResult.HealApplied} | revenue={playResult.EffectResult.RevenueGained}");
+                Debug.Log($"[CardDebugRunner] Play PASSED | zone={playResult.FinalZone} | damage={playResult.EffectResult.DamageDealt} | heal={playResult.EffectResult.HealApplied} | revenue={playResult.EffectResult.RevenueGained}");
             }
 
             DumpWriterState(writer, runtimeCard);

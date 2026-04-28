@@ -8,8 +8,6 @@ public class CardRuntimeState
 
     [SerializeField] private CardZone currentZone;
 
-    [SerializeField] private bool isManifestedOnBoard;
-
     [SerializeField] private AxialCoord boardPosition;
 
     [SerializeField] private OptionalInt currentMovementCapacity;
@@ -26,7 +24,7 @@ public class CardRuntimeState
 
     public CardData SourceCard => sourceCard;
     public CardZone CurrentZone => currentZone;
-    public bool IsManifestedOnBoard => isManifestedOnBoard;
+    public bool IsManifestedOnBoard => currentZone == CardZone.Board;
     public AxialCoord BoardPosition => boardPosition;
     public OptionalInt CurrentMovementCapacity => currentMovementCapacity;
     public OptionalInt CurrentHp => currentHp;
@@ -93,7 +91,6 @@ public class CardRuntimeState
 
         if (zone != CardZone.Board)
         {
-            isManifestedOnBoard = false;
             boardPosition = default;
         }
     }
@@ -101,7 +98,6 @@ public class CardRuntimeState
     public void ManifestOnBoard(AxialCoord position)
     {
         currentZone = CardZone.Board;
-        isManifestedOnBoard = true;
         boardPosition = position;
     }
 

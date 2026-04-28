@@ -1,4 +1,5 @@
 using UnityEngine;
+using FortGame.Computer;
 using FortGame.UI;
 
 
@@ -7,6 +8,8 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 {
     public GameConfig gameConfig; // Config du jeu, voir Config/GameConfig.cs
     public CardLibrary cardLibrary;
+    public HUDManager hudManager;
+    public ComputerPlayer computerPlayer;
 
     public PlayerState player1;
     public PlayerState player2;
@@ -43,6 +46,16 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         {
             Debug.LogError("GameConfig is missing!");
             return;
+        }
+
+        if (hudManager == null)
+        {
+            hudManager = FindFirstObjectByType<HUDManager>();
+        }
+
+        if (computerPlayer == null)
+        {
+            computerPlayer = FindFirstObjectByType<ComputerPlayer>();
         }
 
         SetupGame();
@@ -113,6 +126,14 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
         currentPhase = GamePhase.Buy;
         LogStateSummary();
+
+        if (IsComputerTurn())
+        {
+            // Rabie: when player2 becomes current player, start the local computer opponent.
+            currentPhase = GamePhase.Play;
+            LogStateSummary();
+            computerPlayer.StartTurn();
+        }
     }
 
 
@@ -585,7 +606,19 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
     public void LogStateSummary()
     {
+        if (hudManager != null && currentPlayer != null)
+        {
+            // Rabie: keep the HUD synced whenever the game prints the current state.
+            hudManager.UpdateHUD(currentPlayer);
+            hudManager.SetTurnStatus(currentPlayer.playerName + " - " + currentPhase);
+        }
+
         Debug.Log(GetStateSummary());
+    }
+
+    private bool IsComputerTurn()
+    {
+        return computerPlayer != null && currentPlayer != null && ReferenceEquals(currentPlayer, player2);
     }
 
     private void ApplyFortDamage(PlayerState targetPlayer, int damage)

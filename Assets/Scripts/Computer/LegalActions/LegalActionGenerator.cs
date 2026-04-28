@@ -123,11 +123,11 @@ namespace FortGame.Computer
             ComputerGameSnapshot snapshot,
             CardRuntimeState runtimeCard)
         {
-            for (int r = 0; r < snapshot.HexGrid.gridHeight; r++)
+            for (int row = 0; row < snapshot.HexGrid.gridHeight; row++)
             {
-                for (int q = 0; q < snapshot.HexGrid.gridWidth; q++)
+                for (int col = 0; col < snapshot.HexGrid.gridWidth; col++)
                 {
-                    AxialCoord coord = new AxialCoord(q, r);
+                    AxialCoord coord = HexGrid.OffsetToAxial(col, row);
                     CardTarget target = new CardTarget
                     {
                         type = CardTargetType.Tile,
@@ -157,8 +157,8 @@ namespace FortGame.Computer
                         cost = runtimeCard.SourceCard.cost,
                         isGeneratedByLegalReader = true,
                         isLegalAction = true,
-                        isDefensiveMove = IsDefensiveTile(snapshot, coord),
-                        movesCloserToEnemyFort = IsForwardMove(snapshot, coord),
+                        isDefensiveMove = IsDefensiveColumn(snapshot, col),
+                        movesCloserToEnemyFort = IsForwardColumn(snapshot, col),
                         isLateGameCard = runtimeCard.SourceCard.cost >= 4,
                         isEarlyGameCard = runtimeCard.SourceCard.cost <= 2
                     };
@@ -168,18 +168,20 @@ namespace FortGame.Computer
             }
         }
 
-        private static bool IsDefensiveTile(ComputerGameSnapshot snapshot, AxialCoord tile)
+        private static bool IsDefensiveColumn(ComputerGameSnapshot snapshot, int col)
         {
+            // Rabie: horizontal board - player defends left, computer/enemy defends right.
             return snapshot.ActingPlayerKey == "enemy"
-                ? tile.r >= snapshot.HexGrid.gridHeight - 2
-                : tile.r <= 1;
+                ? col >= snapshot.HexGrid.gridWidth - 2
+                : col <= 1;
         }
 
-        private static bool IsForwardMove(ComputerGameSnapshot snapshot, AxialCoord tile)
+        private static bool IsForwardColumn(ComputerGameSnapshot snapshot, int col)
         {
+            // Rabie: computer/red side moves left toward the player fort; player moves right.
             return snapshot.ActingPlayerKey == "enemy"
-                ? tile.r < snapshot.HexGrid.gridHeight - 2
-                : tile.r > 1;
+                ? col < snapshot.HexGrid.gridWidth - 2
+                : col > 1;
         }
     }
 }

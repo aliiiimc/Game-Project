@@ -96,7 +96,9 @@ namespace FortGame.UI
         {
             //Ali :
 
-            if (_gameManager != null && _gameManager.mustDiscardAfterBuy)
+            if (_gameManager != null
+                && _gameManager.currentPhase == GamePhase.Buy
+                && !_gameManager.isBuyDecisionPending)
             {
                 if (runtimeCard == null) // runtimeCard est la variable qui relie la carte affichée à la vraie carte du jeu.
                 {
@@ -110,7 +112,7 @@ namespace FortGame.UI
                     _gameManager.handUI.ClearVisualSelection();
                 }
                 SetSelected(true);
-                Debug.Log("Card selected for forced discard.");
+                Debug.Log("Card selected for discard.");
                 return;
             }
 

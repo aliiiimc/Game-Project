@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace FortGame.UI
 {
@@ -51,6 +52,11 @@ namespace FortGame.UI
                     cardUI.costText.text = runtimeCard.SourceCard.cost.ToString();
                 }
 
+                Image cardImage = cardUI.GetComponent<Image>();
+                if (cardImage != null && runtimeCard.SourceCard.handDeckSprite != null)
+                {
+                    cardImage.sprite = runtimeCard.SourceCard.handDeckSprite;
+                }
 
                 _cardsInHand.Add(cardUI);
             }

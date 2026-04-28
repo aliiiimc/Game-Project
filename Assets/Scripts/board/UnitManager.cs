@@ -8,10 +8,15 @@ public class UnitManager : MonoBehaviour
     private List<HexTile> attackTiles = new List<HexTile>();
     private HexGrid grid;
 
+    private GameManager gameManager; //Ali
+
+
     void Start()
     {
+        gameManager = FindFirstObjectByType<GameManager>(); //Def de GameManager
         grid = FindFirstObjectByType<HexGrid>();
     }
+
 
     void Update()
     {
@@ -97,11 +102,26 @@ public class UnitManager : MonoBehaviour
                 target.Die();
             }
         }
-        else if (targetTile.tileType == "fort")
+        else if (targetTile.tileType == "fort") //Ali : Update de AttackTarget
         {
-            Debug.Log($"Attacked enemy fort!");
-            // Fort damage logic will go here later
+            Debug.Log("Attacked fort!");
+
+            if (gameManager == null)
+            {
+                Debug.LogWarning("GameManager not found. Cannot damage fort.");
+                return;
+            }
+
+            if (targetTile.owner == "enemy")
+            {
+                gameManager.DamagePlayer2Fort(selectedUnit.attack);
+            }
+            else if (targetTile.owner == "player")
+            {
+                gameManager.DamagePlayer1Fort(selectedUnit.attack);
+            }
         }
+
 
         DeselectUnit();
     }

@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a22a16c2ce4eae54e87d9e5ed7a1dc64, type: 3}
-  m_Name: Knight
+  m_Name: Miner
   m_EditorClassIdentifier: Assembly-CSharp::CharacterCardData
-  cardName: Knight
-  cost: 3
-  handDeckSprite: {fileID: 21300000, guid: 3d5cabf83685ff94188a01d3301b1c04, type: 3}
+  cardName: 'Miner '
+  cost: 20
+  handDeckSprite: {fileID: 21300000, guid: 068bfeb0535479e4681f06950459650c, type: 3}
   description: 
-  manifestedSprite: {fileID: 21300000, guid: 5f49d95700e77014b8bedac25cf9e0e3, type: 3}
-  maxHp: 70
-  attackDamage: 20
-  startsReadyToAttack: 1
+  manifestedSprite: {fileID: 21300000, guid: a462b92b8abf21f4fbb67f7f5f72ff1a, type: 3}
+  maxHp: 30
+  attackDamage: 10
+  startsReadyToAttack: 0
   unitMovementCapacity:
     hasValue: 1
-    value: 2
+    value: 10

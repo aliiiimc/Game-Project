@@ -49,6 +49,16 @@ public abstract class CardStateWriterBase : ICardStateWriter
         LogTransaction($"ApplyHeal: {card.SourceCard.DisplayName} amount={Mathf.Max(0, amount)}.");
     }
 
+    public virtual void ApplyFortDamage(string playerId, int amount)
+    {
+        LogTransaction($"ApplyFortDamage ignored by {GetType().Name}: player='{playerId}' amount={Mathf.Max(0, amount)}.");
+    }
+
+    public virtual void ApplyFortHeal(string playerId, int amount)
+    {
+        LogTransaction($"ApplyFortHeal ignored by {GetType().Name}: player='{playerId}' amount={Mathf.Max(0, amount)}.");
+    }
+
     public virtual void ModifyDamage(CardRuntimeState card, int delta)
     {
         if (card == null)

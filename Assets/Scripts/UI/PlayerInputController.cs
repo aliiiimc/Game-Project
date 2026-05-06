@@ -121,8 +121,6 @@ namespace FortGame.UI
                 return;
             }
 
-            actingPlayer.money -= cardCost;
-            // Rabie: update the board tile visually after the card pipeline accepts the play.
             ApplyBoardVisual(runtimeCard, actingPlayerKey, target);
 
             if (_gameManager.handUI != null)

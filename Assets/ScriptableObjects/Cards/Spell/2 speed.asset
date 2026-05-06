@@ -15,10 +15,12 @@ MonoBehaviour:
   cardName: 2x speed
   cost: 4
   handDeckSprite: {fileID: 2807850933495882075, guid: fd8b357a4905b0447946371ee89c45c1, type: 3}
-  description: 
+  description: Multiplies the target's movement capacity by 2
   validatorId: target.rules.reusable
   effectId: effect.buff
   effectType: 0
   effectPower: 1
   effectDurationTurns: 3
-  spellMovementCapacity: 1
+  spellMovementCapacity:
+    hasValue: 0
+    value: 0

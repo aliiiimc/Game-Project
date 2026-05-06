@@ -26,6 +26,14 @@ public sealed class CardDebugRunner : MonoBehaviour
     [SerializeField] private string targetPlayerId;
     [SerializeField] private string targetEntityId;
 
+    [Header("Dummy Unit Target")]
+    [SerializeField] private bool useDummyTargetCard;
+    [SerializeField] private CardData dummyTargetCardData;
+    [SerializeField] private bool dummyTargetOnBoard = true;
+    [SerializeField] private int dummyTargetQ;
+    [SerializeField] private int dummyTargetR;
+    [SerializeField] private string dummyTargetPlayerId = "player";
+
     [Header("Fake Board")]
     [SerializeField] private int boardWidth = 8;
     [SerializeField] private int boardHeight = 6;
@@ -77,6 +85,7 @@ public sealed class CardDebugRunner : MonoBehaviour
         };
 
         IBoardStateReader board = CreateBoardReader(runtimeCard, tile);
+        AttachDummyTargetIfConfigured(ref target);
         ICardStateWriter writer = CreateWriter(actingPlayerKey, startingMoney);
 
         CardValidationContext validationContext = new CardValidationContext
@@ -179,6 +188,32 @@ public sealed class CardDebugRunner : MonoBehaviour
         }
 
         return new FakeCardStateWriter(actingPlayerId, initialMoney);
+    }
+
+    private void AttachDummyTargetIfConfigured(ref CardTarget target)
+    {
+        if (!useDummyTargetCard || dummyTargetCardData == null)
+        {
+            return;
+        }
+
+        CardRuntimeState dummyTarget = CardFactory.CreateRuntimeState(dummyTargetCardData);
+        if (dummyTarget == null)
+        {
+            return;
+        }
+
+        if (dummyTargetOnBoard)
+        {
+            dummyTarget.ManifestOnBoard(new AxialCoord(dummyTargetQ, dummyTargetR));
+        }
+
+        target.targetCard = dummyTarget;
+
+        if (string.IsNullOrWhiteSpace(target.targetPlayerId))
+        {
+            target.targetPlayerId = string.IsNullOrWhiteSpace(dummyTargetPlayerId) ? actingPlayerKey : dummyTargetPlayerId;
+        }
     }
 
     private static void DumpWriterState(ICardStateWriter writer, CardRuntimeState runtimeCard)

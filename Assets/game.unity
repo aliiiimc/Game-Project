@@ -286,16 +286,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dac05e78800e3e043a23c8c4e8d227c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CardDebugRunner
-  sourceCard: {fileID: 11400000, guid: 3346697d0c1565a48985f7875420fd04, type: 2}
+  sourceCard: {fileID: 11400000, guid: ebc230f3db990394eb6dae6d94b0eb71, type: 2}
   validatorBehaviour: {fileID: 669885988}
-  effectBehaviour: {fileID: 777541298}
+  effectBehaviour: {fileID: 777541294}
   writerBehaviour: {fileID: 1727623639}
   boardSource: {fileID: 680960799}
   useCardPlayPipeline: 1
   actingPlayerKey: player
   opponentPlayerKey: enemy
   startingMoney: 10
-  targetType: 5
+  targetType: 1
   targetQ: 2
   targetR: 5
   targetPlayerId: 

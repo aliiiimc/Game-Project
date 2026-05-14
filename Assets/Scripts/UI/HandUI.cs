@@ -49,7 +49,8 @@ namespace FortGame.UI
 
                 if (cardUI.costText != null)
                 {
-                    cardUI.costText.text = runtimeCard.SourceCard.cost.ToString();
+                    // Cost is only for buying, playing is free. We hide the cost text in the hand.
+                    cardUI.costText.text = ""; 
                 }
 
                 Image cardImage = cardUI.GetComponent<Image>();

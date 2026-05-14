@@ -72,18 +72,6 @@ public sealed class CardPlayPipeline : ICardPlayPipeline
                 emptyEffect,
                 finalZone: request.SourceCard.CurrentZone);
         }
-        // Spend the card cost inside the shared play pipeline after validation succeeds,
-        // so every card play path pays before applying effects.
-        int cost = request.SourceCard.SourceCard != null ? request.SourceCard.SourceCard.cost : 0;
-        if (!request.Writer.TrySpendCost(request.ActingPlayerId, cost))
-        {
-            return CardPlayResult.Failure(
-                "INSUFFICIENT_FUNDS",
-                "Player does not have enough money to play this card.",
-                validationResult,
-                emptyEffect,
-                finalZone: request.SourceCard.CurrentZone);
-        }
 
         CardEffectContext effectContext = new CardEffectContext
         {

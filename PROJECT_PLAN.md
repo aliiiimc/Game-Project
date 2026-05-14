@@ -191,7 +191,6 @@ Main coding tasks:
 - create the effect pipeline:
   - select card
   - validate target
-  - spend cost
   - apply effect
   - send the card to the correct pile
 

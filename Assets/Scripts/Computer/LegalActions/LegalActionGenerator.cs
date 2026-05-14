@@ -52,14 +52,6 @@ namespace FortGame.Computer
                     continue;
                 }
 
-                int cost = runtimeCard.SourceCard.cost;
-                if (snapshot.ActingPlayer.money < cost)
-                {
-                    _diagnostics.RecordCandidate();
-                    _diagnostics.RecordRejection(runtimeCard.SourceCard.DisplayName, default, "INSUFFICIENT_FUNDS", "Player does not have enough money.");
-                    continue;
-                }
-
                 if (runtimeCard.SourceCard is SpellCardData)
                 {
                     TryAddSpellFortAction(legalActions, validationContext, snapshot, runtimeCard);

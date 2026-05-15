@@ -5,6 +5,9 @@ using UnityEngine;
 public class UnitManager : MonoBehaviour
 {
     public float smoothMoveDuration = 0.25f;
+    public float walkBobHeight = 0.08f;
+    public float walkLeanAngle = 4f;
+    public float walkSquashAmount = 0.08f;
 
     private Unit selectedUnit;
     private List<HexTile> moveTiles = new List<HexTile>();
@@ -249,15 +252,26 @@ public class UnitManager : MonoBehaviour
     {
         isAnimatingUnit = true;
 
+        Vector3 originalScale = unit != null ? unit.transform.localScale : Vector3.one;
+        Quaternion originalRotation = unit != null ? unit.transform.rotation : Quaternion.identity;
+
         if (smoothMoveDuration <= 0f)
         {
             if (unit != null)
             {
                 unit.transform.position = targetPosition;
+                unit.transform.localScale = originalScale;
+                unit.transform.rotation = originalRotation;
             }
 
             isAnimatingUnit = false;
             yield break;
+        }
+
+        float moveDirection = Mathf.Sign(targetPosition.x - startPosition.x);
+        if (Mathf.Approximately(moveDirection, 0f))
+        {
+            moveDirection = 1f;
         }
 
         float elapsed = 0f;
@@ -266,13 +280,26 @@ public class UnitManager : MonoBehaviour
             elapsed += Time.deltaTime;
             float progress = Mathf.Clamp01(elapsed / smoothMoveDuration);
             float easedProgress = Mathf.SmoothStep(0f, 1f, progress);
-            unit.transform.position = Vector3.Lerp(startPosition, targetPosition, easedProgress);
+            float walkCycle = Mathf.Sin(progress * Mathf.PI * 4f);
+            float bobOffset = Mathf.Abs(walkCycle) * walkBobHeight;
+            float leanOffset = walkCycle * walkLeanAngle * -moveDirection;
+            float squash = Mathf.Abs(walkCycle) * walkSquashAmount;
+
+            unit.transform.position = Vector3.Lerp(startPosition, targetPosition, easedProgress) + Vector3.up * bobOffset;
+            unit.transform.rotation = originalRotation * Quaternion.Euler(0f, 0f, leanOffset);
+            unit.transform.localScale = new Vector3(
+                originalScale.x * (1f + squash * 0.5f),
+                originalScale.y * (1f - squash),
+                originalScale.z
+            );
             yield return null;
         }
 
         if (unit != null)
         {
             unit.transform.position = targetPosition;
+            unit.transform.localScale = originalScale;
+            unit.transform.rotation = originalRotation;
         }
 
         isAnimatingUnit = false;

@@ -148,6 +148,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 882b15b555158684b84e4795d70752c4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UnitManager
+  smoothMoveDuration: 0.01
+  walkBobHeight: 0.08
+  walkLeanAngle: 4
+  walkSquashAmount: 0.17
 --- !u!4 &183975072
 Transform:
   m_ObjectHideFlags: 0
@@ -415,9 +419,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HexGrid
   hexPrefab: {fileID: 6914111918059673649, guid: 4fba3e25e8558df418f0a6fa963bbf12, type: 3}
   unitPrefab: {fileID: 7106110467106997786, guid: 515f55841c8020f4c8f087df7e501073, type: 3}
-  gridWidth: 9
-  gridHeight: 20
+  gridWidth: 30
+  gridHeight: 11
   hexSize: 0.65
+  spawnDebugUnits: 1
 --- !u!4 &1988535892
 Transform:
   m_ObjectHideFlags: 0
@@ -427,7 +432,7 @@ Transform:
   m_GameObject: {fileID: 1988535890}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
-  m_LocalPosition: {x: 4.53252, y: 8.69464, z: 0}
+  m_LocalPosition: {x: -10, y: 13, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

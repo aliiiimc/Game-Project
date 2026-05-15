@@ -1,8 +1,11 @@
 using System.Collections.Generic;
+using System.Collections;
 using UnityEngine;
 
 public class UnitManager : MonoBehaviour
 {
+    public float smoothMoveDuration = 0.25f;
+
     private Unit selectedUnit;
     private List<HexTile> moveTiles = new List<HexTile>();
     private List<HexTile> attackTiles = new List<HexTile>();
@@ -10,6 +13,7 @@ public class UnitManager : MonoBehaviour
 
     private GameManager gameManager; //Ali
     private string lastActiveOwner = "";
+    private bool isAnimatingUnit;
 
 
     void Start()
@@ -23,6 +27,11 @@ public class UnitManager : MonoBehaviour
     void Update()
     {
         ResetUnitsForActiveOwnerIfNeeded();
+
+        if (isAnimatingUnit)
+        {
+            return;
+        }
 
         if (Input.GetMouseButtonDown(0))
         {
@@ -70,11 +79,10 @@ public class UnitManager : MonoBehaviour
         // Movement range (green)
         if (selectedUnit.CanMove())
         {
-            moveTiles = HexUtils.GetTilesInRange(tile, selectedUnit.moveRange, grid);
+            moveTiles = HexUtils.GetReachableMoveTiles(tile, selectedUnit.moveRange, grid);
             foreach (HexTile t in moveTiles)
             {
-                if (t.IsEmpty())
-                    t.Highlight(Color.green);
+                t.Highlight(Color.green);
             }
         }
 
@@ -98,11 +106,16 @@ public class UnitManager : MonoBehaviour
             return;
         }
 
-        selectedUnit.currentTile.RemoveUnit();
-        selectedUnit.PlaceOnTile(targetTile);
-        selectedUnit.transform.position = targetTile.transform.position;
-        selectedUnit.MarkMoved();
+        Unit movingUnit = selectedUnit;
+        Vector3 startPosition = movingUnit.transform.position;
+        Vector3 targetPosition = targetTile.transform.position;
+
+        movingUnit.currentTile.RemoveUnit();
+        movingUnit.PlaceOnTile(targetTile, snapToTile: false);
+        movingUnit.MarkMoved();
         DeselectUnit();
+
+        StartCoroutine(MoveUnitSmoothly(movingUnit, startPosition, targetPosition));
     }
 
     void AttackTarget(HexTile targetTile)
@@ -230,5 +243,38 @@ public class UnitManager : MonoBehaviour
             && tile.owner != "none"
             && tile.owner != GetActiveOwner()
             && (tile.tileType == "unit" || tile.tileType == "fort" || canTargetEnemyWorldEffect);
+    }
+
+    IEnumerator MoveUnitSmoothly(Unit unit, Vector3 startPosition, Vector3 targetPosition)
+    {
+        isAnimatingUnit = true;
+
+        if (smoothMoveDuration <= 0f)
+        {
+            if (unit != null)
+            {
+                unit.transform.position = targetPosition;
+            }
+
+            isAnimatingUnit = false;
+            yield break;
+        }
+
+        float elapsed = 0f;
+        while (unit != null && elapsed < smoothMoveDuration)
+        {
+            elapsed += Time.deltaTime;
+            float progress = Mathf.Clamp01(elapsed / smoothMoveDuration);
+            float easedProgress = Mathf.SmoothStep(0f, 1f, progress);
+            unit.transform.position = Vector3.Lerp(startPosition, targetPosition, easedProgress);
+            yield return null;
+        }
+
+        if (unit != null)
+        {
+            unit.transform.position = targetPosition;
+        }
+
+        isAnimatingUnit = false;
     }
 }

@@ -54,4 +54,47 @@ public static class HexUtils
         visited.Remove(start);
         return visited;
     }
+
+    public static List<HexTile> GetReachableMoveTiles(HexTile start, int range, HexGrid grid)
+    {
+        List<HexTile> reachableTiles = new List<HexTile>();
+        if (start == null || grid == null || range <= 0)
+        {
+            return reachableTiles;
+        }
+
+        List<HexTile> visited = new List<HexTile>();
+        Queue<HexTile> tileQueue = new Queue<HexTile>();
+        Queue<int> distanceQueue = new Queue<int>();
+
+        visited.Add(start);
+        tileQueue.Enqueue(start);
+        distanceQueue.Enqueue(0);
+
+        while (tileQueue.Count > 0)
+        {
+            HexTile current = tileQueue.Dequeue();
+            int distance = distanceQueue.Dequeue();
+
+            if (distance >= range)
+            {
+                continue;
+            }
+
+            foreach (HexTile neighbor in GetNeighbors(current, grid))
+            {
+                if (visited.Contains(neighbor) || !neighbor.IsEmpty())
+                {
+                    continue;
+                }
+
+                visited.Add(neighbor);
+                reachableTiles.Add(neighbor);
+                tileQueue.Enqueue(neighbor);
+                distanceQueue.Enqueue(distance + 1);
+            }
+        }
+
+        return reachableTiles;
+    }
 }

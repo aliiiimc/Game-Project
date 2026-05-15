@@ -48,12 +48,16 @@ public class Unit : MonoBehaviour
         hasAttackedThisTurn = false;
     }
 
-    public void PlaceOnTile(HexTile tile)
+    public void PlaceOnTile(HexTile tile, bool snapToTile = true)
     {
         currentTile = tile;
         tile.tileType = "unit";
         tile.owner = owner;
-        transform.position = tile.transform.position;
+
+        if (snapToTile)
+        {
+            transform.position = tile.transform.position;
+        }
 
         SpriteRenderer sr = GetComponent<SpriteRenderer>();
         if (owner == "player")

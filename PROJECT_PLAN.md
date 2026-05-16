@@ -29,9 +29,14 @@ Start with:
 - this turn order:
   - income
   - optional buy or discard
-  - play cards
-  - attack
+  - play actions
   - end turn
+
+v1 phase decision:
+
+- `Attack` phase is removed from the normal playable flow
+- `Play` phase contains card play, unit movement, and unit attacks
+- the code may keep `GamePhase.Attack` temporarily for legacy/debug compatibility, but the team should not build new gameplay flow around it
 
 Keep the card ideas simple at first:
 
@@ -322,7 +327,7 @@ Before adding extra ideas, these must work:
 - game starts correctly
 - each side gets the correct starting hand
 - player can play cards legally
-- units can move and attack
+- units can move and attack during Play phase
 - Fort can take damage
 - the computer can finish its turn without breaking the game
 - card effects work correctly
@@ -341,6 +346,7 @@ Use this checklist often.
 - spawned units use the Character card's movement value
 - spawned Character units use the Character card's board sprite
 - newly spawned Character units follow the team's summon attack readiness rule
+- Play phase allows the player to play cards, move units, and attack valid targets
 - units cannot move to illegal hexes
 - attacks only happen in valid range
 - dead units are removed correctly

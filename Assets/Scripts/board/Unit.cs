@@ -46,6 +46,8 @@ public class Unit : MonoBehaviour
     {
         hasMovedThisTurn = false;
         hasAttackedThisTurn = false;
+        // A unit that was not ready on summon becomes ready on its owner's next turn.
+        isReadyToAttack = true;
     }
 
     public void PlaceOnTile(HexTile tile, bool snapToTile = true)

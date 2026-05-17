@@ -55,6 +55,25 @@ public static class HexUtils
         return visited;
     }
 
+    public static int GetHexDistance(HexTile start, HexTile target)
+    {
+        if (start == null || target == null)
+        {
+            return -1;
+        }
+
+        return GetAxialDistance(start.coord, target.coord);
+    }
+
+    public static int GetAxialDistance(AxialCoord start, AxialCoord target)
+    {
+        int dq = start.q - target.q;
+        int dr = start.r - target.r;
+        int ds = -dq - dr;
+
+        return (Mathf.Abs(dq) + Mathf.Abs(dr) + Mathf.Abs(ds)) / 2;
+    }
+
     public static List<HexTile> GetReachableMoveTiles(HexTile start, int range, HexGrid grid)
     {
         List<HexTile> reachableTiles = new List<HexTile>();
@@ -96,5 +115,57 @@ public static class HexUtils
         }
 
         return reachableTiles;
+    }
+
+    public static int GetMoveDistance(HexTile start, HexTile target, HexGrid grid, int maxRange)
+    {
+        if (start == null || target == null || grid == null || maxRange < 0)
+        {
+            return -1;
+        }
+
+        if (start == target)
+        {
+            return 0;
+        }
+
+        List<HexTile> visited = new List<HexTile>();
+        Queue<HexTile> tileQueue = new Queue<HexTile>();
+        Queue<int> distanceQueue = new Queue<int>();
+
+        visited.Add(start);
+        tileQueue.Enqueue(start);
+        distanceQueue.Enqueue(0);
+
+        while (tileQueue.Count > 0)
+        {
+            HexTile current = tileQueue.Dequeue();
+            int distance = distanceQueue.Dequeue();
+
+            if (distance >= maxRange)
+            {
+                continue;
+            }
+
+            foreach (HexTile neighbor in GetNeighbors(current, grid))
+            {
+                if (visited.Contains(neighbor) || (!neighbor.IsEmpty() && neighbor != target))
+                {
+                    continue;
+                }
+
+                int nextDistance = distance + 1;
+                if (neighbor == target)
+                {
+                    return nextDistance;
+                }
+
+                visited.Add(neighbor);
+                tileQueue.Enqueue(neighbor);
+                distanceQueue.Enqueue(nextDistance);
+            }
+        }
+
+        return -1;
     }
 }

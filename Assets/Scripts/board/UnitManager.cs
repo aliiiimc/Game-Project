@@ -81,10 +81,11 @@ public class UnitManager : MonoBehaviour
         selectedUnit = FindUnitOnTile(tile);
         if (selectedUnit == null) return;
 
-        // Movement range (green)
+        // Movement range (green). The range uses the unit's remaining turn budget, not the full card range again.
         if (selectedUnit.CanMove())
         {
-            moveTiles = HexUtils.GetReachableMoveTiles(tile, selectedUnit.moveRange, grid);
+            moveTiles = HexUtils.GetReachableMoveTiles(tile, selectedUnit.GetRemainingMovement(), grid);
+            moveTiles.RemoveAll(t => !IsInsideTurnStartRange(selectedUnit, t));
             foreach (HexTile t in moveTiles)
             {
                 t.Highlight(moveHighlightColor);
@@ -112,12 +113,30 @@ public class UnitManager : MonoBehaviour
         }
 
         Unit movingUnit = selectedUnit;
+        int movementCost = HexUtils.GetMoveDistance(
+            movingUnit.currentTile,
+            targetTile,
+            grid,
+            movingUnit.GetRemainingMovement());
+
+        if (movementCost <= 0)
+        {
+            DeselectUnit();
+            return;
+        }
+
+        if (!IsInsideTurnStartRange(movingUnit, targetTile))
+        {
+            DeselectUnit();
+            return;
+        }
+
         Vector3 startPosition = movingUnit.transform.position;
         Vector3 targetPosition = targetTile.transform.position;
 
         movingUnit.currentTile.RemoveUnit();
         movingUnit.PlaceOnTile(targetTile, snapToTile: false);
-        movingUnit.MarkMoved();
+        movingUnit.MarkMoved(movementCost);
         DeselectUnit();
 
         StartCoroutine(MoveUnitSmoothly(movingUnit, startPosition, targetPosition));
@@ -248,6 +267,16 @@ public class UnitManager : MonoBehaviour
             && tile.owner != "none"
             && tile.owner != GetActiveOwner()
             && (tile.tileType == "unit" || tile.tileType == "fort" || canTargetEnemyWorldEffect);
+    }
+
+    bool IsInsideTurnStartRange(Unit unit, HexTile tile)
+    {
+        if (unit == null || tile == null || unit.turnStartTile == null)
+        {
+            return true;
+        }
+
+        return HexUtils.GetHexDistance(unit.turnStartTile, tile) <= unit.moveRange;
     }
 
     IEnumerator MoveUnitSmoothly(Unit unit, Vector3 startPosition, Vector3 targetPosition)

@@ -498,21 +498,14 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
     public void GoToAttackPhase()
     {
-        if (currentPhase != GamePhase.Play)
-        {
-            Debug.Log("You can only go to Attack phase from Play phase.");
-            return;
-        }
-
-        currentPhase = GamePhase.Attack;
-        LogStateSummary();
+        Debug.Log("Attack phase has been removed. Units can attack during Play phase.");
     }
 
     public void FinishAttackPhase()
     {
-        if (currentPhase != GamePhase.Attack)
+        if (currentPhase != GamePhase.Play)
         {
-            Debug.Log("You can only finish attack during Attack phase.");
+            Debug.Log("You can only end combat actions during Play phase.");
             return;
         }
 
@@ -523,9 +516,9 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
     public void EndTurn()
     {
-        if (currentPhase != GamePhase.Play && currentPhase != GamePhase.Attack)
+        if (currentPhase != GamePhase.Play)
         {
-            Debug.Log("You can only end turn from Play or Attack phase.");
+            Debug.Log("You can only end turn from Play phase.");
             return;
         }
 

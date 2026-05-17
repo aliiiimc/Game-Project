@@ -116,7 +116,7 @@ namespace FortGame.Computer
                 return;
             }
 
-            if (gameManager.currentPhase == GamePhase.Play || gameManager.currentPhase == GamePhase.Attack)
+            if (gameManager.currentPhase == GamePhase.Play)
             {
                 // Rabie: tell the main game flow that the computer finished its turn.
                 gameManager.EndTurn();

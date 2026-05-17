@@ -4,7 +4,6 @@ public enum GamePhase
     Income,
     Buy,
     Play,
-    Attack,
     End,
     GameOver
 }

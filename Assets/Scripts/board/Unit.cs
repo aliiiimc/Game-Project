@@ -8,8 +8,10 @@ public class Unit : MonoBehaviour
     public int attack = 3;
     public string owner = "player";
     public HexTile currentTile;
+    public HexTile turnStartTile;
     public bool hasMovedThisTurn;
     public bool hasAttackedThisTurn;
+    public int movementSpentThisTurn;
 
     // Ali: runtime flag copied from card data for world-effect capture rules.
     public bool canColonizeEnemyWorldEffects;
@@ -21,20 +23,31 @@ public class Unit : MonoBehaviour
 
     public bool CanMove()
     {
-        return !hasMovedThisTurn && !hasAttackedThisTurn;
+        return !hasAttackedThisTurn && GetRemainingMovement() > 0;
     }
 
 
     // Ali: a unit can only attack if it has not attacked yet and its summon/readiness rule allows it.
     public bool CanAttack()
     {
-        return isReadyToAttack && !hasAttackedThisTurn;
+        return isReadyToAttack && !hasAttackedThisTurn && !HasExhaustedMovementThisTurn();
     }
 
-
-    public void MarkMoved()
+    public int GetRemainingMovement()
     {
-        hasMovedThisTurn = true;
+        return Mathf.Max(0, moveRange - movementSpentThisTurn);
+    }
+
+    public bool HasExhaustedMovementThisTurn()
+    {
+        return hasMovedThisTurn && GetRemainingMovement() <= 0;
+    }
+
+    public void MarkMoved(int movementCost)
+    {
+        int safeCost = Mathf.Max(0, movementCost);
+        movementSpentThisTurn = Mathf.Min(moveRange, movementSpentThisTurn + safeCost);
+        hasMovedThisTurn = movementSpentThisTurn > 0;
     }
 
     public void MarkAttacked()
@@ -46,6 +59,8 @@ public class Unit : MonoBehaviour
     {
         hasMovedThisTurn = false;
         hasAttackedThisTurn = false;
+        movementSpentThisTurn = 0;
+        turnStartTile = currentTile;
         // A unit that was not ready on summon becomes ready on its owner's next turn.
         isReadyToAttack = true;
     }
@@ -53,6 +68,10 @@ public class Unit : MonoBehaviour
     public void PlaceOnTile(HexTile tile, bool snapToTile = true)
     {
         currentTile = tile;
+        if (turnStartTile == null)
+        {
+            turnStartTile = tile;
+        }
         tile.tileType = "unit";
         tile.owner = owner;
 

@@ -34,7 +34,6 @@ No visible board object. Applies an instant or temporary effect by modifying sta
 
 - Revival: revives  character dead from last round
 - 2x Speed: 1 turn doubles tiles, doesn't work on miner.
-- Manipulating enemy fields: 1 turn
 - Freeze: enemy unit cannot move for 1 turn
 - Tax Collection: choose field of enemy player and takes away the money generated of the field and gives it to you
 - Sabotage: disables enemy building for 1 turn

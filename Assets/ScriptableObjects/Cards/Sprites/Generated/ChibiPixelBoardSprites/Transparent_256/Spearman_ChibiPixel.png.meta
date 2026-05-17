@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: a0f855235feaeba428874fabacd33387
+guid: 228a5fd8d740e014b80126f22f29ef5f
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 6271399085124507442
-    second: wheat_0
+      213: 4270412340355224758
+    second: Spearman_ChibiPixel_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -100,13 +100,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: wheat_0
+      name: Spearman_ChibiPixel_0
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 1024
-        height: 1536
+        x: 70
+        y: 19
+        width: 133
+        height: 222
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -115,8 +115,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 2375e899d3c780750800000000000000
-      internalID: 6271399085124507442
+      spriteID: 6b4515fd56d834b30800000000000000
+      internalID: 4270412340355224758
       vertices: []
       indices: 
       edges: []
@@ -135,7 +135,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      wheat_0: 6271399085124507442
+      Spearman_ChibiPixel_0: 4270412340355224758
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

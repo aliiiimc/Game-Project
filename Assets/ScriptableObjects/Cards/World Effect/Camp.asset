@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CampCardData
   cardName: 
   cost: 0
-  handDeckSprite: {fileID: -8765846003301459409, guid: 8709c62bb507cdb4c8db9fbf90267be3, type: 3}
+  handDeckSprite: {fileID: 21300000, guid: 211a086c4ff64586aa97f23a2ef65fca, type: 3}
   description: 
   validatorId: target.rules.reusable
   effectId: 
-  manifestedSprite: {fileID: -8968069216532178980, guid: ce95c080748327c408e77c1fc59d715f, type: 3}
+  manifestedSprite: {fileID: 21300000, guid: 59a0ef3f15ae41a991609d7db087c3d4, type: 3}
   category: 1
   structureHp:
     hasValue: 0

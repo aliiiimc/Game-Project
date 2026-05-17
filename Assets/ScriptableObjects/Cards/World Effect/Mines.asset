@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MinesCardData
   cardName: 
   cost: 0
-  handDeckSprite: {fileID: -2121628431070228569, guid: 7ce25fc85b53cb7428274e532b2f8330, type: 3}
+  handDeckSprite: {fileID: 21300000, guid: d24bdea1527b437da6a0d1a9213530c7, type: 3}
   description: 
   validatorId: target.rules.reusable
   effectId: effect.summon
-  manifestedSprite: {fileID: 3108955975675672734, guid: 84ed32d1f52551442bdf0566275a291e, type: 3}
+  manifestedSprite: {fileID: 21300000, guid: a0a73ebcb79d434f9d41cc557e6c5abb, type: 3}
   category: 0
   structureHp:
     hasValue: 0

@@ -1,4 +1,6 @@
+// Rabie: "Added AI movement and attack action generation using UnitManager legal board actions, while keeping existing card action generation."
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace FortGame.Computer
 {
@@ -44,30 +46,29 @@ namespace FortGame.Computer
 
             //Ali : évite une erreur si la main IA est absente/vide
             IReadOnlyList<CardRuntimeState> handCards = snapshot.HandCards;
-            if (handCards == null || handCards.Count == 0)
+            if (handCards != null && handCards.Count > 0)
             {
-                legalActions.Add(ComputerAction.CreateEndTurnAction(snapshot.ActingPlayerKey));
-                return legalActions;
+                for (int i = 0; i < handCards.Count; i++)
+                {
+                    CardRuntimeState runtimeCard = handCards[i];
+                    if (runtimeCard?.SourceCard == null)
+                    {
+                        _diagnostics.RecordCandidate();
+                        continue;
+                    }
+
+                    if (runtimeCard.SourceCard is SpellCardData)
+                    {
+                        TryAddSpellFortAction(legalActions, validationContext, snapshot, runtimeCard);
+                        continue;
+                    }
+
+                    GenerateTilePlacementActions(legalActions, validationContext, snapshot, runtimeCard);
+                }
             }
 
-
-            for (int i = 0; i < handCards.Count; i++)
-            {
-                CardRuntimeState runtimeCard = handCards[i];
-                if (runtimeCard?.SourceCard == null)
-                {
-                    _diagnostics.RecordCandidate();
-                    continue;
-                }
-
-                if (runtimeCard.SourceCard is SpellCardData)
-                {
-                    TryAddSpellFortAction(legalActions, validationContext, snapshot, runtimeCard);
-                    continue;
-                }
-
-                GenerateTilePlacementActions(legalActions, validationContext, snapshot, runtimeCard);
-            }
+            GenerateUnitAttackActions(legalActions, snapshot);
+            GenerateUnitMovementActions(legalActions, snapshot);
 
             if (legalActions.Count == 0)
             {
@@ -211,6 +212,154 @@ namespace FortGame.Computer
             }
         }
 
+        private void GenerateUnitMovementActions(
+            List<ComputerAction> legalActions,
+            ComputerGameSnapshot snapshot)
+        {
+            if (legalActions == null || snapshot?.HexGrid == null)
+            {
+                return;
+            }
+
+            UnitManager unitManager = Object.FindFirstObjectByType<UnitManager>();
+            if (unitManager == null)
+            {
+                return;
+            }
+
+            List<Unit> units = unitManager.GetUnitsForOwner(snapshot.ActingPlayerKey);
+            for (int i = 0; i < units.Count; i++)
+            {
+                Unit unit = units[i];
+                if (unit == null || unit.currentTile == null)
+                {
+                    continue;
+                }
+
+                List<HexTile> destinationTiles = unitManager.GetLegalMoveTiles(unit);
+                for (int tileIndex = 0; tileIndex < destinationTiles.Count; tileIndex++)
+                {
+                    HexTile destinationTile = destinationTiles[tileIndex];
+                    if (destinationTile == null)
+                    {
+                        continue;
+                    }
+
+                    _diagnostics.RecordCandidate();
+
+                    int destinationColumn = snapshot.HexGrid.AxialToOffsetColumn(destinationTile.coord);
+                    bool movesForward = IsForwardMove(snapshot, unit, destinationTile);
+
+                    var action = new ComputerAction(
+                        $"Move {unit.name} to ({destinationTile.coord.q}, {destinationTile.coord.r})",
+                        ActionType.MoveUnit)
+                    {
+                        actingPlayerId = snapshot.ActingPlayerKey,
+                        actingUnit = unit,
+                        destinationTile = destinationTile,
+                        target = new CardTarget
+                        {
+                            type = CardTargetType.Tile,
+                            tile = destinationTile.coord
+                        },
+                        isGeneratedByLegalReader = true,
+                        isLegalAction = true,
+                        isDefensiveMove = ShouldDefend(snapshot, destinationColumn),
+                        movesCloserToEnemyFort = movesForward,
+                        movesBackward = IsBackwardMove(snapshot, unit, destinationTile),
+                        hasSynergyOnBoard = movesForward
+                    };
+
+                    legalActions.Add(action);
+                }
+            }
+        }
+
+        private void GenerateUnitAttackActions(
+            List<ComputerAction> legalActions,
+            ComputerGameSnapshot snapshot)
+        {
+            if (legalActions == null || snapshot?.HexGrid == null)
+            {
+                return;
+            }
+
+            UnitManager unitManager = Object.FindFirstObjectByType<UnitManager>();
+            if (unitManager == null)
+            {
+                return;
+            }
+
+            List<Unit> units = unitManager.GetUnitsForOwner(snapshot.ActingPlayerKey);
+            for (int i = 0; i < units.Count; i++)
+            {
+                Unit unit = units[i];
+                if (unit == null || unit.currentTile == null)
+                {
+                    continue;
+                }
+
+                List<HexTile> targetTiles = unitManager.GetLegalAttackTargets(unit);
+                for (int targetIndex = 0; targetIndex < targetTiles.Count; targetIndex++)
+                {
+                    HexTile targetTile = targetTiles[targetIndex];
+                    if (targetTile == null)
+                    {
+                        continue;
+                    }
+
+                    if (targetTile.tileType != "unit" && targetTile.tileType != "fort")
+                    {
+                        continue;
+                    }
+
+                    _diagnostics.RecordCandidate();
+
+                    Unit targetUnit = unitManager.FindUnitOnTile(targetTile);
+                    ActionType actionType = targetTile.tileType == "fort"
+                        ? ActionType.AttackFort
+                        : ActionType.AttackUnit;
+
+                    CardTargetType targetType = actionType == ActionType.AttackFort
+                        ? CardTargetType.EnemyFort
+                        : CardTargetType.EnemyUnit;
+
+                    string targetName = actionType == ActionType.AttackFort
+                        ? "enemy fort"
+                        : targetUnit != null ? targetUnit.name : "enemy unit";
+
+                    int targetColumn = snapshot.HexGrid.AxialToOffsetColumn(targetTile.coord);
+
+                    var action = new ComputerAction(
+                        $"Attack {targetName} with {unit.name}",
+                        actionType)
+                    {
+                        actingPlayerId = snapshot.ActingPlayerKey,
+                        actingUnit = unit,
+                        targetTile = targetTile,
+                        target = new CardTarget
+                        {
+                            type = targetType,
+                            tile = targetTile.coord,
+                            targetCard = targetUnit != null ? targetUnit.RuntimeCard : null,
+                            targetPlayerId = targetTile.owner,
+                            targetEntityId = actionType == ActionType.AttackFort ? "fort" : "unit"
+                        },
+                        isGeneratedByLegalReader = true,
+                        isLegalAction = true,
+                        willDestroyEnemyFort = actionType == ActionType.AttackFort
+                            && snapshot.OpponentPlayer != null
+                            && unit.attack >= snapshot.OpponentPlayer.fortHp,
+                        isDefensiveMove = ShouldDefend(snapshot, targetColumn),
+                        destroysEnemyUnit = targetUnit != null && unit.attack >= targetUnit.health,
+                        survivesTrade = targetUnit == null || unit.health > targetUnit.attack
+                    };
+
+                    legalActions.Add(action);
+                }
+            }
+        }
+
 
         // Ali: reusable validator checks the real Fort tile, so AI fort targets need the Fort coordinate.
         private static bool TryGetOpponentFortTile(ComputerGameSnapshot snapshot, out AxialCoord fortTile)
@@ -303,6 +452,36 @@ namespace FortGame.Computer
             return snapshot.ActingPlayerKey == "enemy"
                 ? col < snapshot.HexGrid.gridWidth - 2
                 : col > 1;
+        }
+
+        private static bool IsForwardMove(ComputerGameSnapshot snapshot, Unit unit, HexTile destinationTile)
+        {
+            if (snapshot?.HexGrid == null || unit?.currentTile == null || destinationTile == null)
+            {
+                return false;
+            }
+
+            int startColumn = snapshot.HexGrid.AxialToOffsetColumn(unit.currentTile.coord);
+            int destinationColumn = snapshot.HexGrid.AxialToOffsetColumn(destinationTile.coord);
+
+            return snapshot.ActingPlayerKey == "enemy"
+                ? destinationColumn < startColumn
+                : destinationColumn > startColumn;
+        }
+
+        private static bool IsBackwardMove(ComputerGameSnapshot snapshot, Unit unit, HexTile destinationTile)
+        {
+            if (snapshot?.HexGrid == null || unit?.currentTile == null || destinationTile == null)
+            {
+                return false;
+            }
+
+            int startColumn = snapshot.HexGrid.AxialToOffsetColumn(unit.currentTile.coord);
+            int destinationColumn = snapshot.HexGrid.AxialToOffsetColumn(destinationTile.coord);
+
+            return snapshot.ActingPlayerKey == "enemy"
+                ? destinationColumn > startColumn
+                : destinationColumn < startColumn;
         }
     }
 }

@@ -1,3 +1,4 @@
+// Rabie: "Added unit action payload fields so AI movement and attack actions can remember their unit and board tile."
 using UnityEngine;
 
 namespace FortGame.Computer 
@@ -27,6 +28,9 @@ namespace FortGame.Computer
         public string actingPlayerId;
         public CardRuntimeState sourceCard;
         public CardTarget target;
+        public Unit actingUnit;
+        public HexTile destinationTile;
+        public HexTile targetTile;
         public string sourceCardName;
         public string validationReason;
         public bool isLegalAction = true;

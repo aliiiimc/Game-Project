@@ -1,3 +1,4 @@
+// Rabie: Added shared public unit action methods so computer AI can query and execute legal movement and attacks through the same board rules as the player.
 using System.Collections.Generic;
 using System.Collections;
 using UnityEngine;
@@ -31,9 +32,7 @@ public class UnitManager : MonoBehaviour
 
     void Start()
     {
-        gameManager = FindFirstObjectByType<GameManager>(); //Def de GameManager
-        grid = FindFirstObjectByType<HexGrid>();
-        worldEffectManager = FindFirstObjectByType<WorldEffectManager>();
+        EnsureReferences();
         ResetUnitsForActiveOwnerIfNeeded();
     }
 
@@ -91,43 +90,143 @@ public class UnitManager : MonoBehaviour
         if (selectedUnit == null) return;
 
         // Movement range (green). The range uses the unit's remaining turn budget, not the full card range again.
-        if (selectedUnit.CanMove())
+        moveTiles = GetLegalMoveTiles(selectedUnit);
+        foreach (HexTile t in moveTiles)
         {
-            moveTiles = HexUtils.GetReachableMoveTiles(tile, selectedUnit.GetRemainingMovement(), grid);
-            AppendReachableEnemyMineTiles(tile, selectedUnit, moveTiles);
-            moveTiles.RemoveAll(t => !IsInsideTurnStartRange(selectedUnit, t));
-            foreach (HexTile t in moveTiles)
-            {
-                t.Highlight(moveHighlightColor);
-            }
+            t.Highlight(moveHighlightColor);
         }
 
         // Attack range (red) — highlight enemies within attackRange
-        if (selectedUnit.CanAttack())
+        attackTiles = GetLegalAttackTargets(selectedUnit);
+        foreach (HexTile t in attackTiles)
         {
-            int effectiveAttackRange = GetAttackRangeForUnit(selectedUnit);
-            if (effectiveAttackRange > selectedUnit.attackRange)
+            t.Highlight(attackHighlightColor);
+        }
+    }
+
+    public List<Unit> GetUnitsForOwner(string owner)
+    {
+        List<Unit> ownedUnits = new List<Unit>();
+        if (string.IsNullOrWhiteSpace(owner))
+        {
+            return ownedUnits;
+        }
+
+        Unit[] allUnits = FindObjectsByType<Unit>(FindObjectsSortMode.None);
+        foreach (Unit unit in allUnits)
+        {
+            if (unit != null && unit.owner == owner)
             {
-                Debug.Log($"[SpecialTrigger][Archer] Extended attack range from {selectedUnit.attackRange} to {effectiveAttackRange}.");
-            }
-            attackTiles = HexUtils.GetTilesInRange(tile, effectiveAttackRange, grid);
-            foreach (HexTile t in attackTiles)
-            {
-                if (IsEnemyTarget(t))
-                    t.Highlight(attackHighlightColor);
+                ownedUnits.Add(unit);
             }
         }
+
+        return ownedUnits;
+    }
+
+    public List<HexTile> GetLegalMoveTiles(Unit unit)
+    {
+        List<HexTile> legalTiles = new List<HexTile>();
+        if (unit == null || unit.currentTile == null || !unit.CanMove())
+        {
+            return legalTiles;
+        }
+
+        EnsureReferences();
+        if (grid == null)
+        {
+            return legalTiles;
+        }
+
+        legalTiles = HexUtils.GetReachableMoveTiles(unit.currentTile, unit.GetRemainingMovement(), grid);
+        AppendReachableEnemyMineTiles(unit.currentTile, unit, legalTiles);
+        legalTiles.RemoveAll(tile => !IsInsideTurnStartRange(unit, tile) || !IsValidMoveDestination(unit, tile));
+        return legalTiles;
+    }
+
+    public List<HexTile> GetLegalAttackTargets(Unit unit)
+    {
+        List<HexTile> legalTargets = new List<HexTile>();
+        if (unit == null || unit.currentTile == null || !unit.CanAttack())
+        {
+            return legalTargets;
+        }
+
+        EnsureReferences();
+        if (grid == null)
+        {
+            return legalTargets;
+        }
+
+        int effectiveAttackRange = GetAttackRangeForUnit(unit);
+        List<HexTile> tilesInRange = HexUtils.GetTilesInRange(unit.currentTile, effectiveAttackRange, grid);
+        foreach (HexTile tile in tilesInRange)
+        {
+            if (IsEnemyTarget(unit, tile))
+            {
+                legalTargets.Add(tile);
+            }
+        }
+
+        return legalTargets;
+    }
+
+    public bool TryMoveUnit(Unit unit, HexTile targetTile)
+    {
+        if (isAnimatingUnit || unit == null || targetTile == null)
+        {
+            return false;
+        }
+
+        List<HexTile> legalTiles = GetLegalMoveTiles(unit);
+        if (!legalTiles.Contains(targetTile))
+        {
+            return false;
+        }
+
+        return ExecuteMoveUnit(unit, targetTile);
+    }
+
+    public bool TryAttackTarget(Unit attacker, HexTile targetTile)
+    {
+        if (isAnimatingUnit || attacker == null || targetTile == null)
+        {
+            return false;
+        }
+
+        List<HexTile> legalTargets = GetLegalAttackTargets(attacker);
+        if (!legalTargets.Contains(targetTile))
+        {
+            return false;
+        }
+
+        return ExecuteAttackTarget(attacker, targetTile);
     }
 
     void MoveUnit(HexTile targetTile)
     {
-        if (selectedUnit == null || !selectedUnit.CanMove())
+        if (!TryMoveUnit(selectedUnit, targetTile))
         {
             DeselectUnit();
             return;
         }
 
-        Unit movingUnit = selectedUnit;
+        DeselectUnit();
+    }
+
+    bool ExecuteMoveUnit(Unit movingUnit, HexTile targetTile)
+    {
+        if (movingUnit == null || targetTile == null || !movingUnit.CanMove())
+        {
+            return false;
+        }
+
+        EnsureReferences();
+        if (grid == null || movingUnit.currentTile == null)
+        {
+            return false;
+        }
+
         CharacterCardData unitCardData;
         ISpecialCardScript specialScript = ResolveSpecialScript(movingUnit, out unitCardData);
         int movementCost = HexUtils.GetMoveDistance(
@@ -138,14 +237,12 @@ public class UnitManager : MonoBehaviour
 
         if (movementCost <= 0)
         {
-            DeselectUnit();
-            return;
+            return false;
         }
 
-        if (!IsInsideTurnStartRange(movingUnit, targetTile))
+        if (!IsInsideTurnStartRange(movingUnit, targetTile) || !IsValidMoveDestination(movingUnit, targetTile))
         {
-            DeselectUnit();
-            return;
+            return false;
         }
 
         Vector3 startPosition = movingUnit.transform.position;
@@ -190,38 +287,47 @@ public class UnitManager : MonoBehaviour
             if (movingUnit.health <= 0)
             {
                 movingUnit.Die();
-                DeselectUnit();
-                return;
+                return true;
             }
         }
 
-        DeselectUnit();
-
         StartCoroutine(MoveUnitSmoothly(movingUnit, startPosition, targetPosition, specialScript, unitCardData, targetTile));
+        return true;
     }
 
     void AttackTarget(HexTile targetTile)
     {
-        if (selectedUnit == null || !selectedUnit.CanAttack())
+        if (!TryAttackTarget(selectedUnit, targetTile))
         {
             DeselectUnit();
             return;
         }
 
-        CharacterCardData attackerCardData;
-        ISpecialCardScript specialScript = ResolveSpecialScript(selectedUnit, out attackerCardData);
-        bool isSpecialTarget = specialScript != null && specialScript.CanTarget(selectedUnit, attackerCardData, targetTile, GetActiveOwner());
-        if (isSpecialTarget && specialScript.TryHandleAttack(selectedUnit, attackerCardData, targetTile, GetActiveOwner()))
+        DeselectUnit();
+    }
+
+    bool ExecuteAttackTarget(Unit attacker, HexTile targetTile)
+    {
+        if (attacker == null || targetTile == null || !attacker.CanAttack())
         {
-            selectedUnit.MarkAttacked();
-            DeselectUnit();
-            return;
+            return false;
+        }
+
+        EnsureReferences();
+        string activeOwner = GetOwnerForUnit(attacker);
+        CharacterCardData attackerCardData;
+        ISpecialCardScript specialScript = ResolveSpecialScript(attacker, out attackerCardData);
+        bool isSpecialTarget = specialScript != null && specialScript.CanTarget(attacker, attackerCardData, targetTile, activeOwner);
+        if (isSpecialTarget && specialScript.TryHandleAttack(attacker, attackerCardData, targetTile, activeOwner))
+        {
+            attacker.MarkAttacked();
+            return true;
         }
 
         Unit target = FindUnitOnTile(targetTile);
         if (target != null)
         {
-            target.ApplyDamage(selectedUnit.attack);
+            target.ApplyDamage(attacker.attack);
             Debug.Log($"Attacked! Target health: {target.health}");
 
             if (target.health <= 0)
@@ -236,49 +342,55 @@ public class UnitManager : MonoBehaviour
             if (gameManager == null)
             {
                 Debug.LogWarning("GameManager not found. Cannot damage fort.");
-                return;
+                return false;
             }
 
             if (targetTile.owner == "enemy")
             {
-                gameManager.DamagePlayer2Fort(selectedUnit.attack);
+                gameManager.DamagePlayer2Fort(attacker.attack);
             }
             else if (targetTile.owner == "player")
             {
-                gameManager.DamagePlayer1Fort(selectedUnit.attack);
+                gameManager.DamagePlayer1Fort(attacker.attack);
+            }
+            else
+            {
+                return false;
             }
         }
         // Ali: colonization rule - special units can convert enemy world effects instead of dealing damage.
         else if (targetTile.tileType == "worldEffect"
-                 && selectedUnit.canColonizeEnemyWorldEffects
-                 && targetTile.owner != GetActiveOwner())
+                 && attacker.canColonizeEnemyWorldEffects
+                 && targetTile.owner != activeOwner)
         {
             if (worldEffectManager == null)
             {
                 worldEffectManager = FindFirstObjectByType<WorldEffectManager>();
             }
 
-            if (worldEffectManager != null && worldEffectManager.TryColonize(targetTile, GetActiveOwner()))
+            if (worldEffectManager != null && worldEffectManager.TryColonize(targetTile, activeOwner))
             {
                 Debug.Log("Colonized enemy world effect.");
             }
             else
             {
                 Debug.LogWarning("Colonization failed: world effect manager rejected this target.");
-                DeselectUnit();
-                return;
+                return false;
             }
         }
         else if (isSpecialTarget)
         {
             Debug.LogWarning("Special target was selected but the special card did not handle this attack.");
-            DeselectUnit();
-            return;
+            return false;
+        }
+        else
+        {
+            return false;
         }
 
 
-        selectedUnit.MarkAttacked();
-        DeselectUnit();
+        attacker.MarkAttacked();
+        return true;
     }
 
     void DeselectUnit()
@@ -290,7 +402,7 @@ public class UnitManager : MonoBehaviour
         selectedUnit = null;
     }
 
-    Unit FindUnitOnTile(HexTile tile)
+    public Unit FindUnitOnTile(HexTile tile)
     {
         Unit[] allUnits = FindObjectsByType<Unit>(FindObjectsSortMode.None);
         foreach (Unit u in allUnits)
@@ -343,33 +455,44 @@ public class UnitManager : MonoBehaviour
 
     bool IsEnemyTarget(HexTile tile)
     {
-        if (tile == null || selectedUnit == null)
+        return IsEnemyTarget(selectedUnit, tile);
+    }
+
+    bool IsEnemyTarget(Unit unit, HexTile tile)
+    {
+        if (tile == null || unit == null)
         {
             return false;
         }
 
+        string activeOwner = GetOwnerForUnit(unit);
         CharacterCardData attackerCardData;
-        ISpecialCardScript specialScript = ResolveSpecialScript(selectedUnit, out attackerCardData);
+        ISpecialCardScript specialScript = ResolveSpecialScript(unit, out attackerCardData);
         bool canSpecialTarget = specialScript != null
-            && specialScript.CanTarget(selectedUnit, attackerCardData, tile, GetActiveOwner());
+            && specialScript.CanTarget(unit, attackerCardData, tile, activeOwner);
 
         // Ali: special units can target enemy world effects for colonization, while normal units keep classic unit/fort targeting.
-        bool canTargetEnemyWorldEffect = selectedUnit.canColonizeEnemyWorldEffects
+        bool canTargetEnemyWorldEffect = unit.canColonizeEnemyWorldEffects
             && tile.tileType == "worldEffect";
 
         return tile.owner != "none"
-            && tile.owner != GetActiveOwner()
+            && tile.owner != activeOwner
             && (tile.tileType == "unit" || tile.tileType == "fort" || canTargetEnemyWorldEffect || canSpecialTarget);
     }
 
     bool IsValidMoveDestination(HexTile tile)
     {
-        if (selectedUnit == null || tile == null)
+        return IsValidMoveDestination(selectedUnit, tile);
+    }
+
+    bool IsValidMoveDestination(Unit unit, HexTile tile)
+    {
+        if (unit == null || tile == null)
         {
             return false;
         }
 
-        return tile.IsEmpty() || IsEnemyMineTileForUnit(tile, selectedUnit);
+        return tile.IsEmpty() || IsEnemyMineTileForUnit(tile, unit);
     }
 
     bool IsEnemyMineTileForUnit(HexTile tile, Unit unit)
@@ -436,6 +559,34 @@ public class UnitManager : MonoBehaviour
         }
 
         return Mathf.Max(0, unit.attackRange);
+    }
+
+    string GetOwnerForUnit(Unit unit)
+    {
+        if (unit != null && !string.IsNullOrWhiteSpace(unit.owner))
+        {
+            return unit.owner;
+        }
+
+        return GetActiveOwner();
+    }
+
+    void EnsureReferences()
+    {
+        if (gameManager == null)
+        {
+            gameManager = FindFirstObjectByType<GameManager>(); //Def de GameManager
+        }
+
+        if (grid == null)
+        {
+            grid = FindFirstObjectByType<HexGrid>();
+        }
+
+        if (worldEffectManager == null)
+        {
+            worldEffectManager = FindFirstObjectByType<WorldEffectManager>();
+        }
     }
 
     ISpecialCardScript ResolveSpecialScript(Unit unit, out CharacterCardData unitCardData)

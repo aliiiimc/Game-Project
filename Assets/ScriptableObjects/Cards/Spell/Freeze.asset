@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpellCardData
   cardName: 
   cost: 0
-  handDeckSprite: {fileID: 0}
+  handDeckSprite: {fileID: 972615928244692245, guid: 1bef3baad5c8f8e49b69be4f97e3735a, type: 3}
   description: 
   validatorId: target.rules.reusable
   effectId: 

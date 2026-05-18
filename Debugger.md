@@ -1,0 +1,21 @@
+## Debug Testing Recipe 
+
+- Minimum scene objects:
+  - `CardDebugLab` with `CardDebugRunner`
+  - `ValidatorsHost` with `ReusableTargetRulesValidator`
+  - `EffectsHost` with production effects (`Summon`, `Buff`, `Damage`, `Heal`, `Debuff`, `IncomeBoost`, `Utility`)
+- Summon validation/effect test:
+  - Source card: character/world card
+  - Target type: `Tile`
+  - Effect behavior: `SummonCardEffect`
+  - If real `HexGrid` gives `INVALID_TILE`, clear `Board Source` to use fake board
+- Unit-target spell test:
+  - Source card: spell (for example `2 speed`, `Scout Utility`)
+  - Target type: `AllyUnit` or `EnemyUnit`
+  - Enable `Use Dummy Target Card` in `CardDebugRunner`
+  - Set `Dummy Target Card Data` to a character card
+  - Keep `Dummy Target On Board = true`
+  - Set `Target Player Id` to `player` (ally) or `enemy` (enemy)
+- Expected outcomes:
+  - Success: `Play PASSED` with zone/effect payload logs
+  - Failure: stable reason codes (`NO_TARGET_CARD`, `WRONG_TARGET_PLAYER`, `INVALID_TILE`, etc.)

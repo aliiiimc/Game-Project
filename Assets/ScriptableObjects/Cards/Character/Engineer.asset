@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CharacterCardData
   cardName: 
   cost: 0
-  handDeckSprite: {fileID: 0}
+  handDeckSprite: {fileID: 2115940347179211307, guid: cc090e93d0fcecd499ed2df021c00873, type: 3}
   description: 
   validatorId: target.rules.reusable
   effectId: 
-  manifestedSprite: {fileID: 0}
+  manifestedSprite: {fileID: -1361017798201000990, guid: 2a8bba0a83b6cdd44bf8c6852ef27150, type: 3}
   maxHp: 0
   attackDamage: 0
   startsReadyToAttack: 0

@@ -14,11 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WheatFieldCardData
   cardName: 
   cost: 0
-  handDeckSprite: {fileID: 6271399085124507442, guid: a0f855235feaeba428874fabacd33387, type: 3}
+  handDeckSprite: {fileID: -4597222887807968353, guid: 47bbf9628428d244889abd4499e01a0e, type: 3}
   description: 
   validatorId: target.rules.reusable
   effectId: effect.summon
-  manifestedSprite: {fileID: 8315357902960899490, guid: 1ef5f81c47c20424eb385f012991bdbb, type: 3}
+  manifestedSprite: {fileID: 3970204860081587053, guid: 3d38a52f323913e45b0d7d41414ea36c, type: 3}
   category: 0
   structureHp:
     hasValue: 1

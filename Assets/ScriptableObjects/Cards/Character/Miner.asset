@@ -16,6 +16,8 @@ MonoBehaviour:
   cost: 20
   handDeckSprite: {fileID: 21300000, guid: 068bfeb0535479e4681f06950459650c, type: 3}
   description: 
+  validatorId: target.rules.reusable
+  effectId: 
   manifestedSprite: {fileID: 21300000, guid: a462b92b8abf21f4fbb67f7f5f72ff1a, type: 3}
   maxHp: 30
   attackDamage: 10

@@ -20,6 +20,7 @@ public class UnitManager : MonoBehaviour
     private readonly List<ISpecialCardScript> specialCardScripts = new List<ISpecialCardScript>
     {
         new Archer(),
+        new Bomber(),
         new EuropeanKing(),
         new Miner(),
         new UfoCow()

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WorldEffectCardData
   cardName: 
   cost: 0
-  handDeckSprite: {fileID: 21300000, guid: cff67d2afc3c4e99814935fd5f1226ac, type: 3}
+  handDeckSprite: {fileID: 3398097592885845358, guid: 94f682216327bf6459c8b76d3c25ff3a, type: 3}
   description: 
   validatorId: target.rules.reusable
   effectId: 

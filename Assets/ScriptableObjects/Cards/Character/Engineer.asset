@@ -9,9 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a22a16c2ce4eae54e87d9e5ed7a1dc64, type: 3}
+  m_Script: {fileID: 11500000, guid: 9f0cbec6ca3846b38d8d4c53888bb43c, type: 3}
   m_Name: Engineer
-  m_EditorClassIdentifier: Assembly-CSharp::CharacterCardData
+  m_EditorClassIdentifier: Assembly-CSharp::EngineerCardData
   cardName: 
   cost: 0
   handDeckSprite: {fileID: 2115940347179211307, guid: cc090e93d0fcecd499ed2df021c00873, type: 3}
@@ -26,3 +26,4 @@ MonoBehaviour:
     hasValue: 0
     value: 0
   canColonizeEnemyWorldEffects: 0
+  structureRepairBoostAmount: 6

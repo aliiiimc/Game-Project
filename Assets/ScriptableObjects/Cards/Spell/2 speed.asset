@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpeedSpellCardData
   cardName: 2x speed
   cost: 4
-  handDeckSprite: {fileID: -3695889536715481131, guid: a4e3f1049e7c80a43a879795d5dbe8e7, type: 3}
+  handDeckSprite: {fileID: -1980338675225548929, guid: e4372a200b6d2e1488c72e8910250c9f, type: 3}
   description: Multiplies the target's movement capacity by 2
   validatorId: target.rules.reusable
   effectId: effect.buff

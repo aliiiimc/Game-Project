@@ -14,8 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ArcherCardData
   cardName: Archer
   cost: 3
-  handDeckSprite: {fileID: 21300000, guid: 95810dc5e3b0e6947b6caa70bb14b1e8, type: 3}
+  handDeckSprite: {fileID: 5097177878183031947, guid: 908c37f01232765459bbad61c4de81a2, type: 3}
   description: 
+  validatorId: target.rules.reusable
+  effectId: 
   manifestedSprite: {fileID: 21300000, guid: 2b0404a658c6ca043b32cc29819fce11, type: 3}
   maxHp: 50
   attackDamage: 15

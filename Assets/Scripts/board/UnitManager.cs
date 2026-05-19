@@ -21,6 +21,7 @@ public class UnitManager : MonoBehaviour
     {
         new Archer(),
         new Bomber(),
+        new Engineer(),
         new EuropeanKing(),
         new Miner(),
         new UfoCow()
@@ -67,7 +68,7 @@ public class UnitManager : MonoBehaviour
             }
             else
             {
-                // Attack an enemy in attack range
+                // Attack a legal target in attack range (enemy by default, or special-card targets).
                 if (attackTiles.Contains(clickedTile) && IsEnemyTarget(clickedTile))
                 {
                     AttackTarget(clickedTile);
@@ -472,13 +473,23 @@ public class UnitManager : MonoBehaviour
         bool canSpecialTarget = specialScript != null
             && specialScript.CanTarget(unit, attackerCardData, tile, activeOwner);
 
+        if (tile.owner == "none")
+        {
+            return false;
+        }
+
+        // Special scripts may intentionally target allied tiles (for example Engineer repairing allied structures).
+        if (canSpecialTarget)
+        {
+            return true;
+        }
+
         // Ali: special units can target enemy world effects for colonization, while normal units keep classic unit/fort targeting.
         bool canTargetEnemyWorldEffect = unit.canColonizeEnemyWorldEffects
             && tile.tileType == "worldEffect";
 
-        return tile.owner != "none"
-            && tile.owner != activeOwner
-            && (tile.tileType == "unit" || tile.tileType == "fort" || canTargetEnemyWorldEffect || canSpecialTarget);
+        return tile.owner != activeOwner
+            && (tile.tileType == "unit" || tile.tileType == "fort" || canTargetEnemyWorldEffect);
     }
 
     bool IsValidMoveDestination(HexTile tile)

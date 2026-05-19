@@ -14,8 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CharacterCardData
   cardName: Knight
   cost: 3
-  handDeckSprite: {fileID: 21300000, guid: 3d5cabf83685ff94188a01d3301b1c04, type: 3}
+  handDeckSprite: {fileID: -3549306391271010332, guid: 924ad454967152d4f8a5bedc09b8f199, type: 3}
   description: 
+  validatorId: target.rules.reusable
+  effectId: 
   manifestedSprite: {fileID: 21300000, guid: 5f49d95700e77014b8bedac25cf9e0e3, type: 3}
   maxHp: 70
   attackDamage: 20

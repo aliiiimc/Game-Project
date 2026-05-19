@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MinerCardData
   cardName: 'Miner '
   cost: 20
-  handDeckSprite: {fileID: 21300000, guid: 068bfeb0535479e4681f06950459650c, type: 3}
+  handDeckSprite: {fileID: 293853300020581487, guid: 08dea46a9ab1de04694874aa8dee18da, type: 3}
   description: 
   validatorId: target.rules.reusable
   effectId: 

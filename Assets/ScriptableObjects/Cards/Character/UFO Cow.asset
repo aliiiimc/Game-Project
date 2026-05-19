@@ -14,8 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::UfoCowCardData
   cardName: UFO Cow
   cost: 0
-  handDeckSprite: {fileID: 21300000, guid: a7ac147d0530b234bb548f1e65fea902, type: 3}
+  handDeckSprite: {fileID: 5863333798962026164, guid: 5aa10272a0ad4c0479dbe628f1238438, type: 3}
   description: 
+  validatorId: target.rules.reusable
+  effectId: 
   manifestedSprite: {fileID: 21300000, guid: 581962ac0447a7f49be95ed3d4028fec, type: 3}
   maxHp: 50
   attackDamage: 20

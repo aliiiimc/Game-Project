@@ -14,8 +14,7 @@ public enum WorldEffectCategory
     Structure,
     ResourceField,
     Hazard,
-    Weather,
-    ZoneEffect
+    Weather
 }
 
 public enum CardZone

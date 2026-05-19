@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BomberCardData
   cardName: 
   cost: 0
-  handDeckSprite: {fileID: 8042297337115676253, guid: 919a8b7affce1a346a553202c6ef5774, type: 3}
+  handDeckSprite: {fileID: -4187696135964769988, guid: c2c55fc504468c74a919011b23589f02, type: 3}
   description: 
   validatorId: target.rules.reusable
   effectId: 

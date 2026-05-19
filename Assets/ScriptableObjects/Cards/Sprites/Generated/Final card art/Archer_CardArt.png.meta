@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: fe7e562c9dab3b447af17b2a2dc72b81
+guid: 908c37f01232765459bbad61c4de81a2
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -5755141208739164748
-    second: Bomber_CardArt (2)_0
+      213: 5097177878183031947
+    second: Archer_CardArt_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -100,7 +100,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Bomber_CardArt (2)_0
+      name: Archer_CardArt_0
       rect:
         serializedVersion: 2
         x: 0
@@ -115,8 +115,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 4bdc3ec0091a120b0800000000000000
-      internalID: -5755141208739164748
+      spriteID: b8434123640dcb640800000000000000
+      internalID: 5097177878183031947
       vertices: []
       indices: 
       edges: []
@@ -135,7 +135,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Bomber_CardArt (2)_0: -5755141208739164748
+      Archer_CardArt_0: 5097177878183031947
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

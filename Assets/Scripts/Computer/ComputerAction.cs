@@ -65,6 +65,8 @@ namespace FortGame.Computer
 
         [Header("Advanced: Synergy")]
         public bool hasSynergyOnBoard = false;
+        // (abdo :) Extra board-position score so the generator can break ties between legal actions intelligently.
+        public float tacticalScore = 0f;
 
         [Header("Turn Control")]
         public bool endsTurn = false;

@@ -134,10 +134,8 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
         if (IsComputerTurn())
         {
-            // Rabie: when player2 becomes current player, start the local computer opponent.
-            currentPhase = GamePhase.Play;
-            LogStateSummary();
-            computerPlayer.StartTurn();
+            // (abdo :) AI turns now buy/refill before Play instead of skipping straight to action execution.
+            HandleComputerBuyPhase();
         }
     }
 
@@ -482,6 +480,135 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         }
 
         return CardFactory.CreateRuntimeState(randomCard);
+    }
+
+    private CardRuntimeState CreateRandomCharacterCardRuntimeState()
+    {
+        // (abdo :) Used by AI buying when it needs real character cards to keep board pressure.
+        if (cardLibrary == null || cardLibrary.cards == null || cardLibrary.cards.Count == 0)
+        {
+            return null;
+        }
+
+        List<CardData> characterCards = new List<CardData>();
+        for (int i = 0; i < cardLibrary.cards.Count; i++)
+        {
+            CardData card = cardLibrary.cards[i];
+            if (card is CharacterCardData)
+            {
+                characterCards.Add(card);
+            }
+        }
+
+        if (characterCards.Count == 0)
+        {
+            return null;
+        }
+
+        CardData randomCharacterCard = characterCards[Random.Range(0, characterCards.Count)];
+        return CardFactory.CreateRuntimeState(randomCharacterCard);
+    }
+
+    private void HandleComputerBuyPhase()
+    {
+        // (abdo :) Keep the computer turn automatic, but give it the same card-refill chance before it starts playing.
+        TryComputerBuyCard();
+
+        // Rabie: when player2 becomes current player, start the local computer opponent.
+        currentPhase = GamePhase.Play;
+        LogStateSummary();
+        computerPlayer.StartTurn();
+    }
+
+    private bool TryComputerBuyCard()
+    {
+        // (abdo :) AI buys once per turn and prefers a character if it has low units or no character in hand.
+        if (currentPlayer == null || gameConfig == null || hasBoughtThisTurn)
+        {
+            return false;
+        }
+
+        if (currentPlayer.money < gameConfig.buyCost)
+        {
+            Debug.Log(currentPlayer.playerName + " skipped buy: not enough money.");
+            return false;
+        }
+
+        if (IsHandFull(currentPlayer))
+        {
+            Debug.Log(currentPlayer.playerName + " skipped buy: hand is full.");
+            return false;
+        }
+
+        string ownerKey = ResolveCurrentOwnerKey();
+        int ownedUnitCount = CountUnitsForOwner(ownerKey);
+        bool shouldBuyCharacter = ownedUnitCount < 3 || !HasCharacterCardInHand(currentPlayer);
+
+        CardRuntimeState boughtCard = shouldBuyCharacter
+            ? CreateRandomCharacterCardRuntimeState()
+            : CreateRandomCardRuntimeState();
+
+        if (boughtCard == null && shouldBuyCharacter)
+        {
+            boughtCard = CreateRandomCardRuntimeState();
+        }
+
+        if (boughtCard == null)
+        {
+            Debug.Log(currentPlayer.playerName + " could not buy a card.");
+            return false;
+        }
+
+        currentPlayer.money -= gameConfig.buyCost;
+        AddCardToHand(currentPlayer, boughtCard);
+        hasBoughtThisTurn = true;
+
+        string cardName = boughtCard.SourceCard != null ? boughtCard.SourceCard.DisplayName : "Unknown Card";
+        Debug.Log(currentPlayer.playerName + " bought " + cardName + ".");
+        Debug.Log(currentPlayer.playerName + " money is now: " + currentPlayer.money);
+        Debug.Log(currentPlayer.playerName + " hand count is now: " + currentPlayer.handCount);
+
+        return true;
+    }
+
+    private bool HasCharacterCardInHand(PlayerState player)
+    {
+        if (player == null || player.handCards == null)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < player.handCards.Count; i++)
+        {
+            CardRuntimeState card = player.handCards[i];
+            if (card != null && card.SourceCard is CharacterCardData)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private int CountUnitsForOwner(string ownerKey)
+    {
+        if (string.IsNullOrWhiteSpace(ownerKey))
+        {
+            return 0;
+        }
+
+        int unitCount = 0;
+        Unit[] units = FindObjectsByType<Unit>(FindObjectsSortMode.None);
+        for (int i = 0; i < units.Length; i++)
+        {
+            Unit unit = units[i];
+            if (unit != null && unit.owner == ownerKey)
+            {
+                unitCount++;
+            }
+        }
+
+        return unitCount;
     }
 
     public void GoToPlayPhase()

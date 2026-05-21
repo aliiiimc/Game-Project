@@ -203,6 +203,8 @@ namespace FortGame.Computer
                         movesCloserToEnemyFort = ShouldPushForward(snapshot, col),
                         //Ali: hasSynergyOnBoard is for Small scoring bonus score for characters placed forward because they can create board pressure.
                         hasSynergyOnBoard = (isCharacterCard && ShouldPushForward(snapshot, col)) || (!isCharacterCard && ShouldDefend(snapshot, col)),
+                        // (abdo :) Spawn cards get a tile score so the AI spreads pressure instead of picking the first valid row.
+                        tacticalScore = ScorePlacementTile(snapshot, coord, isCharacterCard),
                         isLateGameCard = runtimeCard.SourceCard.cost >= 4,
                         isEarlyGameCard = runtimeCard.SourceCard.cost <= 2
                     };
@@ -249,6 +251,11 @@ namespace FortGame.Computer
 
                     int destinationColumn = snapshot.HexGrid.AxialToOffsetColumn(destinationTile.coord);
                     bool movesForward = IsForwardMove(snapshot, unit, destinationTile);
+                    int movementDistance = HexUtils.GetMoveDistance(
+                        unit.currentTile,
+                        destinationTile,
+                        snapshot.HexGrid,
+                        unit.GetRemainingMovement());
 
                     var action = new ComputerAction(
                         $"Move {unit.name} to ({destinationTile.coord.q}, {destinationTile.coord.r})",
@@ -267,7 +274,9 @@ namespace FortGame.Computer
                         isDefensiveMove = ShouldDefend(snapshot, destinationColumn),
                         movesCloserToEnemyFort = movesForward,
                         movesBackward = IsBackwardMove(snapshot, unit, destinationTile),
-                        hasSynergyOnBoard = movesForward
+                        hasSynergyOnBoard = movesForward,
+                        // (abdo :) Movement gets scored by forward progress and distance so the AI uses its range instead of tiny steps.
+                        tacticalScore = ScoreMoveDestination(snapshot, unit, destinationTile, movementDistance)
                     };
 
                     legalActions.Add(action);
@@ -358,6 +367,156 @@ namespace FortGame.Computer
                     legalActions.Add(action);
                 }
             }
+        }
+
+        private static float ScorePlacementTile(ComputerGameSnapshot snapshot, AxialCoord coord, bool isCharacterCard)
+        {
+            // (abdo :) Prefer a useful central band, then add lane spread and a tiny stable tie-breaker.
+            if (snapshot?.HexGrid == null)
+            {
+                return 0f;
+            }
+
+            int col = snapshot.HexGrid.AxialToOffsetColumn(coord);
+            float score = GetCenterBandScore(snapshot, coord.r) * 18f;
+            score += ScoreLaneSpread(snapshot, coord);
+            score += GetStableTileJitter(coord) * 6f;
+
+            if (isCharacterCard)
+            {
+                int preferredFrontColumn = snapshot.ActingPlayerKey == "enemy"
+                    ? snapshot.HexGrid.gridWidth - 2
+                    : 1;
+
+                score += Mathf.Max(0f, 18f - Mathf.Abs(col - preferredFrontColumn) * 18f);
+            }
+            else if (ShouldDefend(snapshot, col))
+            {
+                score += 12f;
+            }
+
+            return score;
+        }
+
+        private static float ScoreMoveDestination(ComputerGameSnapshot snapshot, Unit unit, HexTile destinationTile, int movementDistance)
+        {
+            // (abdo :) Reward forward movement and spending movement budget, while still keeping lanes near the middle useful.
+            if (snapshot?.HexGrid == null || unit?.currentTile == null || destinationTile == null)
+            {
+                return 0f;
+            }
+
+            int forwardProgress = GetForwardProgress(snapshot, unit.currentTile, destinationTile);
+            int safeDistance = Mathf.Max(0, movementDistance);
+
+            float score = 0f;
+            score += Mathf.Max(0, forwardProgress) * 45f;
+            score += safeDistance * 12f;
+            score += GetCenterRowScore(snapshot, destinationTile.coord.r) * 18f;
+
+            if (forwardProgress <= 0)
+            {
+                score -= 10f;
+            }
+
+            return score;
+        }
+
+        private static float ScoreLaneSpread(ComputerGameSnapshot snapshot, AxialCoord coord)
+        {
+            // (abdo :) Penalize rows already occupied by allied units so new spawns do not stack on one lane.
+            if (snapshot == null || string.IsNullOrWhiteSpace(snapshot.ActingPlayerKey))
+            {
+                return 0f;
+            }
+
+            Unit[] units = Object.FindObjectsByType<Unit>(FindObjectsSortMode.None);
+            if (units == null || units.Length == 0)
+            {
+                return 0f;
+            }
+
+            float score = 0f;
+            for (int i = 0; i < units.Length; i++)
+            {
+                Unit unit = units[i];
+                if (unit == null || unit.owner != snapshot.ActingPlayerKey || unit.currentTile == null)
+                {
+                    continue;
+                }
+
+                int rowDistance = Mathf.Abs(unit.currentTile.coord.r - coord.r);
+                if (rowDistance == 0)
+                {
+                    score -= 42f;
+                }
+                else if (rowDistance == 1)
+                {
+                    score -= 16f;
+                }
+                else if (rowDistance == 2)
+                {
+                    score -= 6f;
+                }
+            }
+
+            return score;
+        }
+
+        private static float GetCenterBandScore(ComputerGameSnapshot snapshot, int row)
+        {
+            if (snapshot?.HexGrid == null || snapshot.HexGrid.gridHeight <= 1)
+            {
+                return 0f;
+            }
+
+            float centerRow = (snapshot.HexGrid.gridHeight - 1) * 0.5f;
+            float centerBandRadius = snapshot.HexGrid.gridHeight >= 9 ? 2f : 1f;
+            float distanceFromCenter = Mathf.Abs(row - centerRow);
+
+            if (distanceFromCenter <= centerBandRadius)
+            {
+                return 1f;
+            }
+
+            float falloffDistance = Mathf.Max(1f, centerRow - centerBandRadius);
+            return Mathf.Clamp01(1f - (distanceFromCenter - centerBandRadius) / falloffDistance);
+        }
+
+        private static float GetStableTileJitter(AxialCoord coord)
+        {
+            int hash = coord.q * 73856093 ^ coord.r * 19349663;
+            hash = Mathf.Abs(hash % 1000);
+            return hash / 1000f;
+        }
+
+        private static float GetCenterRowScore(ComputerGameSnapshot snapshot, int row)
+        {
+            if (snapshot?.HexGrid == null || snapshot.HexGrid.gridHeight <= 1)
+            {
+                return 0f;
+            }
+
+            float centerRow = (snapshot.HexGrid.gridHeight - 1) * 0.5f;
+            float maxDistance = Mathf.Max(1f, centerRow);
+            float distanceFromCenter = Mathf.Abs(row - centerRow);
+
+            return Mathf.Clamp01(1f - distanceFromCenter / maxDistance);
+        }
+
+        private static int GetForwardProgress(ComputerGameSnapshot snapshot, HexTile startTile, HexTile destinationTile)
+        {
+            if (snapshot?.HexGrid == null || startTile == null || destinationTile == null)
+            {
+                return 0;
+            }
+
+            int startColumn = snapshot.HexGrid.AxialToOffsetColumn(startTile.coord);
+            int destinationColumn = snapshot.HexGrid.AxialToOffsetColumn(destinationTile.coord);
+
+            return snapshot.ActingPlayerKey == "enemy"
+                ? startColumn - destinationColumn
+                : destinationColumn - startColumn;
         }
 
 

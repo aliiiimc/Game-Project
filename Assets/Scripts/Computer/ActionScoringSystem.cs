@@ -112,6 +112,9 @@ namespace FortGame.Computer
                 score += 75f;
             }
 
+            // (abdo :) Apply the tile/movement score added by the legal-action generator.
+            score += action.tacticalScore;
+
             if (action.movesBackward)
             {
                 score -= 50f;

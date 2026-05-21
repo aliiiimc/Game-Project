@@ -191,6 +191,7 @@ public class HexGrid : MonoBehaviour
         //Generate base stats when a card spawns
         unit.health = characterCard.maxHp;
         unit.attack = characterCard.attackDamage;
+        unit.attackRange = Mathf.Max(0, characterCard.attackRange);
 
         // Ali: copy special capture capability from card definition to spawned unit.
         unit.canColonizeEnemyWorldEffects = characterCard.canColonizeEnemyWorldEffects;

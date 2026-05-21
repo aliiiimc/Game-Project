@@ -11,7 +11,9 @@ public class Engineer : SpecialCardScriptBase
 
     public override bool CanTarget(Unit attacker, CharacterCardData attackerCardData, HexTile tile, string activeOwner)
     {
-        return TryGetRepairableStructure(tile, activeOwner, out _, out _, out _);
+        return GetAttackType(attackerCardData) == AttackType.HealFix
+            && TargetsGround(attackerCardData)
+            && TryGetRepairableStructure(tile, activeOwner, out _, out _, out _);
     }
 
     public override bool TryHandleAttack(Unit attacker, CharacterCardData attackerCardData, HexTile tile, string activeOwner)
@@ -37,14 +39,6 @@ public class Engineer : SpecialCardScriptBase
         worldEffect.sourceCard.ApplyHeal(restoredHp);
         if (worldEffect.sourceCard.CurrentHp.HasValue)
         {
-            int runtimeHpAfterHeal = worldEffect.sourceCard.CurrentHp.Value;
-            int overflow = Mathf.Max(0, runtimeHpAfterHeal - maxHp);
-            if (overflow > 0)
-            {
-                // Keep runtime HP bounded to structure max HP (no permanent over-heal boost).
-                worldEffect.sourceCard.ApplyDamage(overflow);
-            }
-
             worldEffect.health = Mathf.Clamp(worldEffect.sourceCard.CurrentHp.Value, 0, maxHp);
         }
         else

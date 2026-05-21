@@ -1,3 +1,5 @@
+using UnityEngine;
+
 public abstract class SpecialCardScriptBase : ISpecialCardScript
 {
     public abstract bool IsMatch(Unit unit, CharacterCardData unitCardData);
@@ -38,5 +40,74 @@ public abstract class SpecialCardScriptBase : ISpecialCardScript
         }
 
         return cardData.DisplayName.Trim().ToLowerInvariant() == expected.Trim().ToLowerInvariant();
+    }
+
+    protected static AttackType GetAttackType(CharacterCardData cardData)
+    {
+        return cardData != null ? cardData.attackType : AttackType.Melee;
+    }
+
+    protected static AttackTarget GetAttackTarget(CharacterCardData cardData)
+    {
+        return cardData != null ? cardData.attackTarget : AttackTarget.Ground;
+    }
+
+    protected static MovementType GetMovementType(CharacterCardData cardData)
+    {
+        return cardData != null ? cardData.movementType : MovementType.Ground;
+    }
+
+    protected static bool TargetsGround(CharacterCardData cardData)
+    {
+        AttackTarget attackTarget = GetAttackTarget(cardData);
+        return attackTarget == AttackTarget.Ground || attackTarget == AttackTarget.Both;
+    }
+
+    protected static bool CanAttackEnemyTileWithProfile(CharacterCardData cardData, HexTile tile)
+    {
+        if (tile == null || GetAttackType(cardData) == AttackType.HealFix)
+        {
+            return false;
+        }
+
+        bool targetIsAir = false;
+        if (tile.tileType == "unit")
+        {
+            Unit targetUnit = FindUnitOnTile(tile);
+            targetIsAir = targetUnit != null && GetMovementType(targetUnit.sourceCharacterCardData) == MovementType.Flying;
+        }
+
+        AttackTarget attackTarget = GetAttackTarget(cardData);
+        if (attackTarget == AttackTarget.Both)
+        {
+            return true;
+        }
+
+        if (targetIsAir)
+        {
+            return attackTarget == AttackTarget.Air;
+        }
+
+        return attackTarget == AttackTarget.Ground;
+    }
+
+    protected static Unit FindUnitOnTile(HexTile tile)
+    {
+        if (tile == null)
+        {
+            return null;
+        }
+
+        Unit[] allUnits = Object.FindObjectsByType<Unit>(FindObjectsSortMode.None);
+        for (int i = 0; i < allUnits.Length; i++)
+        {
+            Unit unit = allUnits[i];
+            if (unit != null && unit.currentTile == tile)
+            {
+                return unit;
+            }
+        }
+
+        return null;
     }
 }

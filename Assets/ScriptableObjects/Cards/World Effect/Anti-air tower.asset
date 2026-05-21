@@ -26,6 +26,8 @@ MonoBehaviour:
   structureDamage:
     hasValue: 0
     value: 0
+  attackType: 1
+  attackTarget: 1
   revenuePerTurn:
     hasValue: 0
     value: 0

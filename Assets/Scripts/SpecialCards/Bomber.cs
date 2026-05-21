@@ -14,6 +14,7 @@ public class Bomber : SpecialCardScriptBase
         return tile != null
             && tile.owner != "none"
             && tile.owner != activeOwner
+            && CanAttackEnemyTileWithProfile(attackerCardData, tile)
             && (tile.tileType == "unit" || tile.tileType == "fort" || tile.tileType == "worldEffect");
     }
 
@@ -177,25 +178,5 @@ public class Bomber : SpecialCardScriptBase
         {
             attacker.ModifyAttack(delta);
         }
-    }
-
-    private static Unit FindUnitOnTile(HexTile tile)
-    {
-        if (tile == null)
-        {
-            return null;
-        }
-
-        Unit[] allUnits = Object.FindObjectsByType<Unit>(FindObjectsSortMode.None);
-        for (int i = 0; i < allUnits.Length; i++)
-        {
-            Unit unit = allUnits[i];
-            if (unit != null && unit.currentTile == tile)
-            {
-                return unit;
-            }
-        }
-
-        return null;
     }
 }

@@ -99,7 +99,10 @@ public class Unit : MonoBehaviour
             return;
         }
 
-        health += safeAmount;
+        int maxHp = sourceCharacterCardData != null ? Mathf.Max(0, sourceCharacterCardData.maxHp) : 0;
+        health = maxHp > 0
+            ? Mathf.Min(maxHp, health + safeAmount)
+            : health + safeAmount;
     }
 
     public void ModifyAttack(int delta)

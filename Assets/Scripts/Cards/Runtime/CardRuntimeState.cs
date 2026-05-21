@@ -174,6 +174,13 @@ public class CardRuntimeState
         }
 
         int clampedAmount = Mathf.Max(0, amount);
+        int maxHp = GetMaxHpFromDefinition();
+        if (maxHp > 0)
+        {
+            currentHp = new OptionalInt(Mathf.Min(maxHp, currentHp.Value + clampedAmount));
+            return;
+        }
+
         currentHp = new OptionalInt(currentHp.Value + clampedAmount);
     }
 
@@ -206,5 +213,20 @@ public class CardRuntimeState
 
         int clampedAmount = Mathf.Max(0, amount);
         currentRevenue = new OptionalInt(currentRevenue.Value + clampedAmount);
+    }
+
+    private int GetMaxHpFromDefinition()
+    {
+        if (sourceCard is CharacterCardData characterCard)
+        {
+            return Mathf.Max(0, characterCard.maxHp);
+        }
+
+        if (sourceCard is WorldEffectCardData worldEffectCard && worldEffectCard.structureHp.HasValue)
+        {
+            return Mathf.Max(0, worldEffectCard.structureHp.Value);
+        }
+
+        return 0;
     }
 }

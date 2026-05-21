@@ -21,9 +21,11 @@ public class UnitManager : MonoBehaviour
     {
         new Archer(),
         new Bomber(),
+        new Dragon(),
         new Engineer(),
         new EuropeanKing(),
         new Miner(),
+        new Priest(),
         new UfoCow()
     };
 
@@ -140,7 +142,11 @@ public class UnitManager : MonoBehaviour
             return legalTiles;
         }
 
-        legalTiles = HexUtils.GetReachableMoveTiles(unit.currentTile, unit.GetRemainingMovement(), grid);
+        legalTiles = HexUtils.GetReachableMoveTiles(
+            unit.currentTile,
+            unit.GetRemainingMovement(),
+            grid,
+            GetMovementType(unit.sourceCharacterCardData));
         AppendReachableEnemyMineTiles(unit.currentTile, unit, legalTiles);
         legalTiles.RemoveAll(tile => !IsInsideTurnStartRange(unit, tile) || !IsValidMoveDestination(unit, tile));
         return legalTiles;
@@ -235,7 +241,8 @@ public class UnitManager : MonoBehaviour
             movingUnit.currentTile,
             targetTile,
             grid,
-            movingUnit.GetRemainingMovement());
+            movingUnit.GetRemainingMovement(),
+            GetMovementType(unitCardData));
 
         if (movementCost <= 0)
         {
@@ -472,6 +479,7 @@ public class UnitManager : MonoBehaviour
         ISpecialCardScript specialScript = ResolveSpecialScript(unit, out attackerCardData);
         bool canSpecialTarget = specialScript != null
             && specialScript.CanTarget(unit, attackerCardData, tile, activeOwner);
+        GetUnitAttackProfile(attackerCardData, out AttackType attackType, out global::AttackTarget attackTarget);
 
         if (tile.owner == "none")
         {
@@ -484,12 +492,43 @@ public class UnitManager : MonoBehaviour
             return true;
         }
 
+        if (attackType == AttackType.HealFix)
+        {
+            return false;
+        }
+
         // Ali: special units can target enemy world effects for colonization, while normal units keep classic unit/fort targeting.
         bool canTargetEnemyWorldEffect = unit.canColonizeEnemyWorldEffects
             && tile.tileType == "worldEffect";
 
-        return tile.owner != activeOwner
-            && (tile.tileType == "unit" || tile.tileType == "fort" || canTargetEnemyWorldEffect);
+        if (tile.owner == activeOwner)
+        {
+            return false;
+        }
+
+        if (tile.tileType == "unit")
+        {
+            Unit targetUnit = FindUnitOnTile(tile);
+            bool targetIsAir = IsAirUnit(targetUnit);
+            if (!CanProfileTarget(attackTarget, targetIsAir))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        if (tile.tileType == "fort")
+        {
+            return CanProfileTarget(attackTarget, false);
+        }
+
+        if (tile.tileType == "worldEffect")
+        {
+            return CanProfileTarget(attackTarget, false) || canTargetEnemyWorldEffect;
+        }
+
+        return false;
     }
 
     bool IsValidMoveDestination(HexTile tile)
@@ -533,7 +572,8 @@ public class UnitManager : MonoBehaviour
                 continue;
             }
 
-            int distance = HexUtils.GetMoveDistance(startTile, tile, grid, unit.GetRemainingMovement());
+            MovementType movementType = GetMovementType(unit.sourceCharacterCardData);
+            int distance = HexUtils.GetMoveDistance(startTile, tile, grid, unit.GetRemainingMovement(), movementType);
             if (distance <= 0)
             {
                 continue;
@@ -581,6 +621,55 @@ public class UnitManager : MonoBehaviour
         }
 
         return GetActiveOwner();
+    }
+
+    static void GetUnitAttackProfile(CharacterCardData cardData, out AttackType attackType, out global::AttackTarget attackTarget)
+    {
+        attackType = AttackType.Melee;
+        attackTarget = global::AttackTarget.Ground;
+
+        if (cardData == null)
+        {
+            return;
+        }
+
+        attackType = cardData.attackType;
+        attackTarget = cardData.attackTarget;
+    }
+
+    static bool CanProfileTarget(global::AttackTarget attackTarget, bool targetIsAir)
+    {
+        if (attackTarget == global::AttackTarget.Both)
+        {
+            return true;
+        }
+
+        if (targetIsAir)
+        {
+            return attackTarget == global::AttackTarget.Air;
+        }
+
+        return attackTarget == global::AttackTarget.Ground;
+    }
+
+    static bool IsAirUnit(Unit unit)
+    {
+        if (unit == null || unit.sourceCharacterCardData == null)
+        {
+            return false;
+        }
+
+        return GetMovementType(unit.sourceCharacterCardData) == MovementType.Flying;
+    }
+
+    static MovementType GetMovementType(CharacterCardData cardData)
+    {
+        if (cardData == null)
+        {
+            return MovementType.Ground;
+        }
+
+        return cardData.movementType;
     }
 
     void EnsureReferences()

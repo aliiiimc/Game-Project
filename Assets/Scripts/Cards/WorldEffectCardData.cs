@@ -12,6 +12,12 @@ public class WorldEffectCardData : CardData
 
     public OptionalInt structureDamage;
 
+    public OptionalInt worldEffectAttackRange;
+
+    public AttackType attackType = AttackType.Projectile;
+
+    public AttackTarget attackTarget = AttackTarget.Ground;
+
     public OptionalInt revenuePerTurn;
 
     public OptionalInt visionModifier;

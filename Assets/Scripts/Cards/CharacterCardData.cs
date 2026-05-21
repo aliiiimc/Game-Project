@@ -10,6 +10,14 @@ public class CharacterCardData : CardData
 
     public int attackDamage;
 
+    public int attackRange = 1;
+
+    public AttackType attackType = AttackType.Melee;
+
+    public AttackTarget attackTarget = AttackTarget.Ground;
+
+    public MovementType movementType = MovementType.Ground;
+
     public bool startsReadyToAttack;
 
     public OptionalInt unitMovementCapacity;

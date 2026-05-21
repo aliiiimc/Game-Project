@@ -8,6 +8,8 @@ public class EuropeanKing : SpecialCardScriptBase
     public override bool CanTarget(Unit attacker, CharacterCardData attackerCardData, HexTile tile, string activeOwner)
     {
         return tile != null
+            && GetAttackType(attackerCardData) != AttackType.HealFix
+            && TargetsGround(attackerCardData)
             && tile.tileType == "worldEffect"
             && tile.owner != "none"
             && tile.owner != activeOwner;

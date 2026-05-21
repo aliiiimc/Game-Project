@@ -9,6 +9,26 @@ public enum SpellEffectType
     Utility
 }
 
+public enum AttackType
+{
+    Melee,
+    Projectile,
+    HealFix
+}
+
+public enum AttackTarget
+{
+    Ground,
+    Air,
+    Both
+}
+
+public enum MovementType
+{
+    Ground,
+    Flying
+}
+
 public enum WorldEffectCategory
 {
     Structure,

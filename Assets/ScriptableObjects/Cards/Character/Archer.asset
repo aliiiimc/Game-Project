@@ -21,6 +21,10 @@ MonoBehaviour:
   manifestedSprite: {fileID: 21300000, guid: 2b0404a658c6ca043b32cc29819fce11, type: 3}
   maxHp: 50
   attackDamage: 15
+  attackRange: 1
+  attackType: 1
+  attackTarget: 2
+  movementType: 0
   startsReadyToAttack: 1
   unitMovementCapacity:
     hasValue: 1

@@ -179,6 +179,47 @@ public class WorldEffectManager : MonoBehaviour
         return worldEffect;
     }
 
+    public bool TryGetAttackProfile(HexTile sourceTile, out AttackType attackType, out AttackTarget attackTarget)
+    {
+        attackType = AttackType.Projectile;
+        attackTarget = AttackTarget.Ground;
+
+        if (sourceTile == null || sourceTile.tileType != "worldEffect")
+        {
+            return false;
+        }
+
+        WorldEffect worldEffect = FindWorldEffectOnTile(sourceTile);
+        if (worldEffect == null || worldEffect.sourceCard == null || !(worldEffect.sourceCard.SourceCard is WorldEffectCardData worldEffectCard))
+        {
+            return false;
+        }
+
+        attackType = worldEffectCard.attackType;
+        attackTarget = worldEffectCard.attackTarget;
+        return true;
+    }
+
+    public bool CanTargetWithProfile(HexTile sourceTile, bool targetIsAir)
+    {
+        if (!TryGetAttackProfile(sourceTile, out _, out AttackTarget attackTarget))
+        {
+            return false;
+        }
+
+        if (attackTarget == AttackTarget.Both)
+        {
+            return true;
+        }
+
+        if (targetIsAir)
+        {
+            return attackTarget == AttackTarget.Air;
+        }
+
+        return attackTarget == AttackTarget.Ground;
+    }
+
     private WorldEffect CreateWorldEffectFromCard(HexTile tile, string owner, CardRuntimeState card, WorldEffectCardData worldEffectCard)
     {
         if (worldEffectsByTile.TryGetValue(tile, out WorldEffect existing) && existing != null)

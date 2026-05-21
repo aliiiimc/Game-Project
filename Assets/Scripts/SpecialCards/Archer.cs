@@ -18,14 +18,10 @@ public class Archer : SpecialCardScriptBase
             bonusAttackRange = UnityEngine.Mathf.Max(0, archerCardData.bonusAttackRange);
         }
 
-        return unit.attackRange + bonusAttackRange;
-    }
+        int baseAttackRange = unitCardData != null
+            ? UnityEngine.Mathf.Max(0, unitCardData.attackRange)
+            : (unit != null ? UnityEngine.Mathf.Max(0, unit.attackRange) : 0);
 
-    public override bool CanTarget(Unit attacker, CharacterCardData attackerCardData, HexTile tile, string activeOwner)
-    {
-        return tile != null
-            && tile.owner != "none"
-            && tile.owner != activeOwner
-            && (tile.tileType == "unit" || tile.tileType == "worldEffect");
+        return baseAttackRange + bonusAttackRange;
     }
 }

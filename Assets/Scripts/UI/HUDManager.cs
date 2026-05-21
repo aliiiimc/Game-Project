@@ -1,8 +1,9 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement; //Ali : ajouté parce que le bouton Restart va recharger la scène actuelle avec: SceneManager.LoadScene(...)
 using TMPro; // Standard Unity text package
 
-namespace FortGame.UI 
+namespace FortGame.UI
 {
     /// <summary>
     /// Manages the heads-up display showing the player's Fort HP, Resources/Money, and game messages.
@@ -35,11 +36,20 @@ namespace FortGame.UI
         public TextMeshProUGUI currentRoundText;
         public TextMeshProUGUI currentPlayerText;
 
+        [Header("Game Over")]
+        public GameObject gameOverPanel; //Ali : gameOverPanel: le panel entier à afficher/cacher.
+        public TextMeshProUGUI winnerText; // Ali : Winner announcement text
+        public GameObject gameplayControlsRoot; // Ali : Pour cacher boutons quand gameover 
+
         private float _errorMessageTimer = 0f;
 
         private void Awake()
         {
             AutoBindMissingReferences();
+            SetGameOverPanelVisible(false); // Au lancement de la scène, la partie n’est pas finie. Donc le panel Game Over doit être caché dès le début.
+
+
+
         }
 
         private void Update()
@@ -72,7 +82,7 @@ namespace FortGame.UI
                 moneyText.text = $"Money: {state.money}";
         }
 
-        public void UpdateHUD(PlayerState player, PlayerState enemy, PlayerState currentPlayer, GamePhase phase, int maxFortHp, int roundNumber)
+        public void UpdateHUD(PlayerState player, PlayerState enemy, PlayerState currentPlayer, GamePhase phase, int maxFortHp, int roundNumber, string winnerName)
         {
             AutoBindMissingReferences();
 
@@ -108,6 +118,7 @@ namespace FortGame.UI
             {
                 turnStatusText.text = $"{currentPlayer.playerName} - {phase}";
             }
+            UpdateGameOverUI(phase, winnerName);
         }
 
         /// <summary>
@@ -216,6 +227,45 @@ namespace FortGame.UI
                 hpFill.fillAmount = Mathf.Clamp01(state.fortHp / (float)safeMaxFortHp);
             }
         }
+
+
+
+
+        //Ali : UpdateGameOverUI: décide quoi afficher selon la phase.
+        private void UpdateGameOverUI(GamePhase phase, string winnerName)
+        {
+            bool isGameOver = phase == GamePhase.GameOver;
+
+            SetGameOverPanelVisible(isGameOver);
+
+            if (winnerText != null)
+            {
+                winnerText.text = isGameOver && !string.IsNullOrWhiteSpace(winnerName)
+                    ? $"{winnerName} wins!"
+                    : "";
+            }
+
+            if (gameplayControlsRoot != null)
+            {
+                gameplayControlsRoot.SetActive(!isGameOver);
+            }
+        }
+
+        private void SetGameOverPanelVisible(bool visible)
+        {
+            if (gameOverPanel != null)
+            {
+                gameOverPanel.SetActive(visible);
+            }
+        }
+
+        public void RestartCurrentScene()
+        {
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        }
+
+
+
 
         private void AutoBindMissingReferences()
         {

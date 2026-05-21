@@ -701,6 +701,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
             currentPhase = GamePhase.GameOver;
             winnerName = player2.playerName;
             Debug.Log(winnerName + " wins the game!");
+            RefreshHUD();
             return;
         }
 
@@ -709,6 +710,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
             currentPhase = GamePhase.GameOver;
             winnerName = player1.playerName;
             Debug.Log(winnerName + " wins the game!");
+            RefreshHUD();
         }
     }
 
@@ -769,7 +771,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         }
 
         int maxFortHp = gameConfig != null ? gameConfig.startingFortHp : Mathf.Max(player1.fortHp, player2.fortHp);
-        hudManager.UpdateHUD(player1, player2, currentPlayer, currentPhase, maxFortHp, roundNumber);
+        hudManager.UpdateHUD(player1, player2, currentPlayer, currentPhase, maxFortHp, roundNumber, winnerName);
     }
 
     private bool IsComputerTurn()

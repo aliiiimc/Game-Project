@@ -9,7 +9,7 @@ public class Miner : SpecialCardScriptBase
 
     public override bool ConsumeMoveAction(Unit unit, CharacterCardData unitCardData)
     {
-        return false;
+        return true;
     }
 
     public override void OnBeforeMove(Unit unit, CharacterCardData unitCardData)

@@ -51,6 +51,16 @@ public class UnitManager : MonoBehaviour
             return;
         }
 
+        if (IsComputerControlledTurn())
+        {
+            if (selectedUnit != null)
+            {
+                DeselectUnit();
+            }
+
+            return;
+        }
+
         if (Input.GetMouseButtonDown(0))
         {
             Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
@@ -483,6 +493,15 @@ public class UnitManager : MonoBehaviour
         }
 
         return "player";
+    }
+
+    bool IsComputerControlledTurn()
+    {
+        EnsureReferences();
+        return gameManager != null
+            && gameManager.computerPlayer != null
+            && gameManager.currentPlayer != null
+            && ReferenceEquals(gameManager.currentPlayer, gameManager.player2);
     }
 
     bool IsEnemyTarget(HexTile tile)

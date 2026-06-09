@@ -49,5 +49,5 @@ MonoBehaviour:
     hasValue: 0
     value: 0
   tilesPerField: 4
-  hpPerTile: 10
+  hpPerTile: 4
   bonusMoneyPerTurn: 1

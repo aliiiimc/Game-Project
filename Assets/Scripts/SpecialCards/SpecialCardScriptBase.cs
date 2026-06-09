@@ -9,6 +9,11 @@ public abstract class SpecialCardScriptBase : ISpecialCardScript
         return unit != null ? unit.attackRange : 0;
     }
 
+    public virtual AttackType GetAttackType(Unit unit, CharacterCardData unitCardData)
+    {
+        return unitCardData != null ? unitCardData.attackType : AttackType.Melee;
+    }
+
     public virtual bool CanTarget(Unit attacker, CharacterCardData attackerCardData, HexTile tile, string activeOwner)
     {
         return false;
@@ -169,6 +174,7 @@ public abstract class SpecialCardScriptBase : ISpecialCardScript
             DragonCardData dragonCardData => dragonCardData.projectileVisuals,
             WatchTowerCardData watchTowerCardData => watchTowerCardData.projectileVisuals,
             AntiAirTowerCardData antiAirTowerCardData => antiAirTowerCardData.projectileVisuals,
+            BomberCardData bomberCardData => bomberCardData.projectileVisuals,
             _ => null
         };
     }

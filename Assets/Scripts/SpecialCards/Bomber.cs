@@ -9,6 +9,44 @@ public class Bomber : SpecialCardScriptBase
         return unitCardData is BomberCardData;
     }
 
+    public override int GetAttackRange(Unit unit, CharacterCardData unitCardData)
+    {
+        if (HasDroppedBomb(unit, unitCardData))
+        {
+            return 1;
+        }
+
+        int bonusAttackRange = 2;
+        if (unitCardData is BomberCardData bomberData)
+        {
+            bonusAttackRange = Mathf.Max(0, bomberData.bonusAttackRange);
+        }
+
+        int baseAttackRange = unitCardData != null ? Mathf.Max(0, unitCardData.attackRange) : 0;
+        return baseAttackRange + bonusAttackRange;
+    }
+
+    public override AttackType GetAttackType(Unit unit, CharacterCardData unitCardData)
+    {
+        if (HasDroppedBomb(unit, unitCardData))
+        {
+            return AttackType.Melee;
+        }
+        return unitCardData != null ? unitCardData.attackType : AttackType.Projectile;
+    }
+
+    private bool HasDroppedBomb(Unit unit, CharacterCardData unitCardData)
+    {
+        if (unit == null || unitCardData == null) return false;
+
+        if (unitCardData is BomberCardData bomberCardData)
+        {
+            return unit.attack <= bomberCardData.damageAfterDroppingBomb;
+        }
+
+        return unit.attack < unitCardData.attackDamage;
+    }
+
     public override bool CanTarget(Unit attacker, CharacterCardData attackerCardData, HexTile tile, string activeOwner)
     {
         return tile != null
@@ -62,6 +100,11 @@ public class Bomber : SpecialCardScriptBase
         if (!attackApplied)
         {
             return false;
+        }
+
+        if (!HasDroppedBomb(attacker, attackerCardData))
+        {
+            PlayProjectileFromUnit(attacker, attackerCardData, tile);
         }
 
         ApplyBombWeakness(attacker, attackerCardData);

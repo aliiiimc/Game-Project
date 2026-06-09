@@ -9,4 +9,5 @@ public interface ISpecialCardScript
     void OnAfterMove(Unit unit, CharacterCardData unitCardData, HexTile destinationTile);
     void OnAfterSpawn(Unit unit, CharacterCardData unitCardData);
     void OnOwnerTurnStart(Unit unit, CharacterCardData unitCardData);
+    AttackType GetAttackType(Unit unit, CharacterCardData unitCardData);
 }

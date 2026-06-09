@@ -593,7 +593,7 @@ public class UnitManager : MonoBehaviour
         ISpecialCardScript specialScript = ResolveSpecialScript(unit, out attackerCardData);
         bool canSpecialTarget = specialScript != null
             && specialScript.CanTarget(unit, attackerCardData, tile, activeOwner);
-        GetUnitAttackProfile(attackerCardData, out AttackType attackType, out global::AttackTarget attackTarget);
+        GetUnitAttackProfile(unit, attackerCardData, out AttackType attackType, out global::AttackTarget attackTarget);
 
         if (tile.owner == "none" && tile.worldEffectOwner == "none")
         {
@@ -737,7 +737,7 @@ public class UnitManager : MonoBehaviour
         return GetActiveOwner();
     }
 
-    static void GetUnitAttackProfile(CharacterCardData cardData, out AttackType attackType, out global::AttackTarget attackTarget)
+    void GetUnitAttackProfile(Unit unit, CharacterCardData cardData, out AttackType attackType, out global::AttackTarget attackTarget)
     {
         attackType = AttackType.Melee;
         attackTarget = global::AttackTarget.Ground;
@@ -749,6 +749,12 @@ public class UnitManager : MonoBehaviour
 
         attackType = cardData.attackType;
         attackTarget = cardData.attackTarget;
+
+        ISpecialCardScript specialScript = ResolveSpecialScript(unit, out _);
+        if (specialScript != null)
+        {
+            attackType = specialScript.GetAttackType(unit, cardData);
+        }
     }
 
     static bool CanProfileTarget(global::AttackTarget attackTarget, bool targetIsAir)

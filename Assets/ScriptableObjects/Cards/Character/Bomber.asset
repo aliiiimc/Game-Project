@@ -31,3 +31,8 @@ MonoBehaviour:
     value: 3
   canColonizeEnemyWorldEffects: 0
   damageAfterDroppingBomb: 4
+  projectileVisuals:
+    projectilePrefab: {fileID: 734101, guid: 00e3b79738ca4b2eb1c9f9791d5a3a34, type: 3}
+    impactPrefab: {fileID: 0}
+    projectileSpeed: 8
+    spawnOffset: {x: 0, y: 0.25, z: 0}

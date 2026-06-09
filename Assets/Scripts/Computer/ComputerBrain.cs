@@ -85,6 +85,13 @@ namespace FortGame.Computer
                 ClearPreferredFollowUpAttack();
             }
 
+            float bestScore = _scoringSystem.GetScore(sortedActions[0], snapshot.ActingPlayer, snapshot.CurrentTurn);
+            if (bestScore <= 0f)
+            {
+                Debug.Log($"[ComputerBrain] Best action score is {bestScore}. Ending turn because no good legal action remains.");
+                return false;
+            }
+
             for (int i = 0; i < sortedActions.Count; i++)
             {
                 ComputerAction candidateAction = sortedActions[i];

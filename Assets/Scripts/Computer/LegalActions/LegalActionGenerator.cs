@@ -59,7 +59,7 @@ namespace FortGame.Computer
 
                     if (runtimeCard.SourceCard is SpellCardData)
                     {
-                        TryAddSpellFortAction(legalActions, validationContext, snapshot, runtimeCard);
+                        GenerateSpellActions(legalActions, validationContext, snapshot, runtimeCard);
                         continue;
                     }
 
@@ -78,13 +78,13 @@ namespace FortGame.Computer
             return legalActions;
         }
 
-        private void TryAddSpellFortAction(
+        private void GenerateSpellActions(
             List<ComputerAction> legalActions,
             CardValidationContext validationContext,
             ComputerGameSnapshot snapshot,
             CardRuntimeState runtimeCard)
         {
-            if (snapshot == null || runtimeCard?.SourceCard == null)
+            if (snapshot == null || !(runtimeCard?.SourceCard is SpellCardData spellCard))
             {
                 return;
             }
@@ -94,56 +94,26 @@ namespace FortGame.Computer
                 return;
             }
 
-            if (!TryGetOpponentFortTile(snapshot, out AxialCoord fortTile))
+            if (spellCard.MatchesSpecialCard(SpecialCardIds.SpellRevival, "Revival"))
             {
+                GenerateRevivalActions(legalActions, validationContext, snapshot, runtimeCard, spellCard);
                 return;
             }
 
-            //Ali :enemy Fort targeting is only valid for damage spells in v1.
-            if (!(runtimeCard.SourceCard is SpellCardData spellCard) || spellCard.effectType != SpellEffectType.Damage)
+            for (int row = 0; row < snapshot.HexGrid.gridHeight; row++)
             {
-                return;
+                for (int col = 0; col < snapshot.HexGrid.gridWidth; col++)
+                {
+                    AxialCoord coord = HexGrid.OffsetToAxial(col, row);
+                    HexTile tile = snapshot.HexGrid.GetTile(coord);
+                    if (!TryBuildSpellTargetFromTile(snapshot, runtimeCard, tile, out CardTarget target))
+                    {
+                        continue;
+                    }
+
+                    TryAddSpellAction(legalActions, validationContext, snapshot, runtimeCard, target);
+                }
             }
-
-            CardTarget target = new CardTarget
-            {
-                type = CardTargetType.EnemyFort,
-                targetPlayerId = snapshot.OpponentPlayerKey,
-                targetEntityId = "fort",
-                tile = fortTile
-
-
-            };
-
-            CardValidationResult result = _targetValidator.Validate(validationContext, runtimeCard, target);
-            if (!result.IsValid)
-            {
-                _diagnostics.RecordCandidate();
-                _diagnostics.RecordRejection(runtimeCard.SourceCard.DisplayName, target, result.ReasonCode, result.Message);
-                return;
-            }
-
-            _diagnostics.RecordCandidate();
-            bool isFortRaceMove = snapshot.ActingPlayer.fortHp <= 8 || snapshot.ActingPlayer.fortHp < snapshot.OpponentPlayer.fortHp;
-            // Ali: a Fort race means the AI is under pressure and should value direct Fort damage more. It's used in ActionScoringSystem
-
-
-            var action = new ComputerAction($"Play {runtimeCard.SourceCard.DisplayName} on enemy fort", ActionType.PlaySpellCard)
-            {
-                actingPlayerId = snapshot.ActingPlayerKey,
-                sourceCard = runtimeCard,
-                sourceCardName = runtimeCard.SourceCard.DisplayName,
-                target = target,
-                cost = 0, // Ali: playing a card is free; card cost is only used when buying.
-                isGeneratedByLegalReader = true,
-                isLegalAction = true,
-                willDestroyEnemyFort = WouldDestroyEnemyFort(snapshot, runtimeCard),
-                isDefensiveMove = isFortRaceMove,
-                isLateGameCard = runtimeCard.SourceCard.cost >= 4,
-                isEarlyGameCard = runtimeCard.SourceCard.cost <= 2
-            };
-
-            legalActions.Add(action);
         }
 
         private void GenerateTilePlacementActions(
@@ -423,6 +393,567 @@ namespace FortGame.Computer
             }
 
             return score;
+        }
+
+        private void GenerateRevivalActions(
+            List<ComputerAction> legalActions,
+            CardValidationContext validationContext,
+            ComputerGameSnapshot snapshot,
+            CardRuntimeState runtimeCard,
+            SpellCardData spellCard)
+        {
+            int lookbackTurns = Mathf.Max(0, spellCard.effectDurationTurns);
+            if (lookbackTurns <= 0)
+            {
+                return;
+            }
+
+            List<CharacterCardData> choices = DeathHistoryManager.GetOrCreate().GetRecentCharacterChoices(lookbackTurns);
+            if (choices == null || choices.Count == 0)
+            {
+                return;
+            }
+
+            for (int choiceIndex = 0; choiceIndex < choices.Count; choiceIndex++)
+            {
+                CharacterCardData revivedCharacter = choices[choiceIndex];
+                if (revivedCharacter == null)
+                {
+                    continue;
+                }
+
+                for (int row = 0; row < snapshot.HexGrid.gridHeight; row++)
+                {
+                    for (int col = 0; col < snapshot.HexGrid.gridWidth; col++)
+                    {
+                        AxialCoord coord = HexGrid.OffsetToAxial(col, row);
+                        CardRuntimeState revivedRuntime = CardFactory.CreateRuntimeState(revivedCharacter);
+                        CardTarget target = new CardTarget
+                        {
+                            type = CardTargetType.Tile,
+                            tile = coord
+                        };
+
+                        CardValidationResult result = _targetValidator.Validate(validationContext, revivedRuntime, target);
+                        if (!result.IsValid)
+                        {
+                            _diagnostics.RecordCandidate();
+                            _diagnostics.RecordRejection(runtimeCard.SourceCard.DisplayName, target, result.ReasonCode, result.Message);
+                            continue;
+                        }
+
+                        _diagnostics.RecordCandidate();
+                        float tacticalScore = ScoreRevivalPlacement(snapshot, revivedRuntime, coord);
+                        legalActions.Add(new ComputerAction($"Play Revival to place {revivedCharacter.DisplayName} on {coord}", ActionType.PlaySpellCard)
+                        {
+                            actingPlayerId = snapshot.ActingPlayerKey,
+                            sourceCard = runtimeCard,
+                            auxiliaryCard = revivedRuntime,
+                            sourceCardName = runtimeCard.SourceCard.DisplayName,
+                            target = target,
+                            cost = 0,
+                            isGeneratedByLegalReader = true,
+                            isLegalAction = true,
+                            hasSynergyOnBoard = true,
+                            movesCloserToEnemyFort = ShouldPushForward(snapshot, snapshot.HexGrid.AxialToOffsetColumn(coord)),
+                            tacticalScore = tacticalScore,
+                            isLateGameCard = runtimeCard.SourceCard.cost >= 4,
+                            isEarlyGameCard = runtimeCard.SourceCard.cost <= 2
+                        });
+                    }
+                }
+            }
+        }
+
+        private void TryAddSpellAction(
+            List<ComputerAction> legalActions,
+            CardValidationContext validationContext,
+            ComputerGameSnapshot snapshot,
+            CardRuntimeState runtimeCard,
+            CardTarget target)
+        {
+            if (legalActions == null || validationContext == null || snapshot == null || runtimeCard?.SourceCard == null)
+            {
+                return;
+            }
+
+            CardValidationResult result = ValidateSpellTarget(validationContext, snapshot, runtimeCard, target);
+            if (!result.IsValid)
+            {
+                _diagnostics.RecordCandidate();
+                _diagnostics.RecordRejection(runtimeCard.SourceCard.DisplayName, target, result.ReasonCode, result.Message);
+                return;
+            }
+
+            _diagnostics.RecordCandidate();
+
+            int targetColumn = snapshot.HexGrid.AxialToOffsetColumn(target.tile);
+            float tacticalScore = ScoreSpellTarget(snapshot, runtimeCard, target);
+            bool isDefensiveMove = tacticalScore >= 180f || ShouldDefend(snapshot, targetColumn);
+            bool destroysEnemyUnit = target.type == CardTargetType.EnemyUnit
+                && target.targetCard != null
+                && GetSpellDamageAmount(runtimeCard) >= GetCardCurrentHp(target.targetCard);
+
+            legalActions.Add(new ComputerAction($"Play {runtimeCard.SourceCard.DisplayName} on {DescribeSpellTarget(target)}", ActionType.PlaySpellCard)
+            {
+                actingPlayerId = snapshot.ActingPlayerKey,
+                sourceCard = runtimeCard,
+                sourceCardName = runtimeCard.SourceCard.DisplayName,
+                target = target,
+                cost = 0,
+                isGeneratedByLegalReader = true,
+                isLegalAction = true,
+                willDestroyEnemyFort = target.type == CardTargetType.EnemyFort && WouldDestroyEnemyFort(snapshot, runtimeCard),
+                isDefensiveMove = isDefensiveMove,
+                destroysEnemyUnit = destroysEnemyUnit,
+                survivesTrade = true,
+                hasSynergyOnBoard = tacticalScore >= 120f,
+                tacticalScore = tacticalScore,
+                isLateGameCard = runtimeCard.SourceCard.cost >= 4,
+                isEarlyGameCard = runtimeCard.SourceCard.cost <= 2
+            });
+        }
+
+        private CardValidationResult ValidateSpellTarget(
+            CardValidationContext validationContext,
+            ComputerGameSnapshot snapshot,
+            CardRuntimeState runtimeCard,
+            CardTarget target)
+        {
+            CardPlayService cardPlayService = ResolveCardPlayService(snapshot);
+            if (cardPlayService != null)
+            {
+                CardPlayResult playResult = cardPlayService.CanPlayCard(runtimeCard, snapshot.ActingPlayerKey, target);
+                if (playResult.Succeeded)
+                {
+                    return CardValidationResult.Valid();
+                }
+
+                return CardValidationResult.Invalid(playResult.ReasonCode, playResult.Message);
+            }
+
+            return _targetValidator.Validate(validationContext, runtimeCard, target);
+        }
+
+        private static CardPlayService ResolveCardPlayService(ComputerGameSnapshot snapshot)
+        {
+            if (snapshot?.GameManager != null)
+            {
+                CardPlayService serviceOnGameManager = snapshot.GameManager.GetComponent<CardPlayService>();
+                if (serviceOnGameManager != null)
+                {
+                    return serviceOnGameManager;
+                }
+            }
+
+            return Object.FindFirstObjectByType<CardPlayService>();
+        }
+
+        private static bool TryBuildSpellTargetFromTile(
+            ComputerGameSnapshot snapshot,
+            CardRuntimeState sourceCard,
+            HexTile tile,
+            out CardTarget target)
+        {
+            target = default;
+
+            if (snapshot == null || sourceCard?.SourceCard == null || tile == null)
+            {
+                return false;
+            }
+
+            AxialCoord coord = tile.coord;
+            if (tile.tileType == "fort")
+            {
+                bool isAllyFort = tile.owner == snapshot.ActingPlayerKey;
+                target = new CardTarget
+                {
+                    type = isAllyFort ? CardTargetType.AllyFort : CardTargetType.EnemyFort,
+                    tile = coord,
+                    targetPlayerId = tile.owner,
+                    targetEntityId = "fort"
+                };
+                return true;
+            }
+
+            CardRuntimeState runtimeTarget = snapshot.BoardReader != null ? snapshot.BoardReader.GetCardAt(coord) : null;
+            if (runtimeTarget == null || runtimeTarget.SourceCard == null)
+            {
+                return false;
+            }
+
+            if (runtimeTarget.SourceCard is CharacterCardData)
+            {
+                bool isAllyUnit = tile.owner == snapshot.ActingPlayerKey;
+                target = new CardTarget
+                {
+                    type = isAllyUnit ? CardTargetType.AllyUnit : CardTargetType.EnemyUnit,
+                    tile = coord,
+                    targetCard = runtimeTarget,
+                    targetPlayerId = tile.owner,
+                    targetEntityId = "unit"
+                };
+                return true;
+            }
+
+            if (runtimeTarget.SourceCard is WorldEffectCardData)
+            {
+                bool isAllyStructure = tile.worldEffectOwner == snapshot.ActingPlayerKey;
+                target = new CardTarget
+                {
+                    type = isAllyStructure ? CardTargetType.AllyStructure : CardTargetType.EnemyStructure,
+                    tile = coord,
+                    targetCard = runtimeTarget,
+                    targetPlayerId = tile.worldEffectOwner,
+                    targetEntityId = "worldEffect"
+                };
+                return true;
+            }
+
+            return false;
+        }
+
+        private static string DescribeSpellTarget(CardTarget target)
+        {
+            switch (target.type)
+            {
+                case CardTargetType.AllyFort:
+                    return "ally fort";
+                case CardTargetType.EnemyFort:
+                    return "enemy fort";
+                case CardTargetType.AllyUnit:
+                case CardTargetType.EnemyUnit:
+                case CardTargetType.AllyStructure:
+                case CardTargetType.EnemyStructure:
+                    return target.targetCard != null && target.targetCard.SourceCard != null
+                        ? target.targetCard.SourceCard.DisplayName
+                        : target.type.ToString();
+                default:
+                    return target.type.ToString();
+            }
+        }
+
+        private static float ScoreSpellTarget(ComputerGameSnapshot snapshot, CardRuntimeState runtimeCard, CardTarget target)
+        {
+            if (!(runtimeCard?.SourceCard is SpellCardData spellCard) || snapshot == null)
+            {
+                return 0f;
+            }
+
+            if (spellCard.MatchesSpecialCard(SpecialCardIds.SpellSabotage, "Sabotage"))
+            {
+                return ScoreStructureDisruption(snapshot, target, 220f);
+            }
+
+            if (spellCard.MatchesSpecialCard(SpecialCardIds.SpellTaxCollection, "Tax collection"))
+            {
+                return ScoreStructureDisruption(snapshot, target, 180f);
+            }
+
+            switch (spellCard.effectType)
+            {
+                case SpellEffectType.Damage:
+                    return ScoreDamageSpell(snapshot, runtimeCard, target);
+                case SpellEffectType.Heal:
+                    return ScoreHealSpell(snapshot, runtimeCard, target);
+                case SpellEffectType.Buff:
+                case SpellEffectType.Boost:
+                case SpellEffectType.Utility:
+                    return ScoreSupportSpell(snapshot, runtimeCard, target);
+                case SpellEffectType.Debuff:
+                    return ScoreDebuffSpell(snapshot, runtimeCard, target);
+                default:
+                    return 0f;
+            }
+        }
+
+        private static float ScoreDamageSpell(ComputerGameSnapshot snapshot, CardRuntimeState runtimeCard, CardTarget target)
+        {
+            int damage = GetSpellDamageAmount(runtimeCard);
+            if (target.type == CardTargetType.EnemyFort)
+            {
+                int opponentFortHp = snapshot.OpponentPlayer != null ? Mathf.Max(1, snapshot.OpponentPlayer.fortHp) : 1;
+                if (damage >= opponentFortHp)
+                {
+                    return 10000f;
+                }
+
+                float score = 140f + damage * 28f;
+                if (opponentFortHp <= 8)
+                {
+                    score += 150f;
+                }
+
+                return score;
+            }
+
+            if (target.type == CardTargetType.EnemyUnit && target.targetCard != null)
+            {
+                int hp = GetCardCurrentHp(target.targetCard);
+                int attack = GetCardCurrentDamage(target.targetCard);
+                float score = 90f + attack * 22f + ScoreThreatNearOwnFort(snapshot, target.tile) + Mathf.Min(120f, damage * 20f);
+                if (damage >= hp)
+                {
+                    score += 220f;
+                }
+
+                return score;
+            }
+
+            if (target.type == CardTargetType.EnemyStructure)
+            {
+                return ScoreStructureDisruption(snapshot, target, 170f) + damage * 18f;
+            }
+
+            return 0f;
+        }
+
+        private static float ScoreHealSpell(ComputerGameSnapshot snapshot, CardRuntimeState runtimeCard, CardTarget target)
+        {
+            int healAmount = GetSpellHealAmount(runtimeCard);
+            if (healAmount <= 0)
+            {
+                return -50f;
+            }
+
+            if (target.type == CardTargetType.AllyFort && snapshot.ActingPlayer != null)
+            {
+                int maxFortHp = snapshot.GameManager != null && snapshot.GameManager.gameConfig != null
+                    ? Mathf.Max(1, snapshot.GameManager.gameConfig.startingFortHp)
+                    : Mathf.Max(1, snapshot.ActingPlayer.fortHp);
+                int missingHp = Mathf.Max(0, maxFortHp - snapshot.ActingPlayer.fortHp);
+                if (missingHp <= 0)
+                {
+                    return -200f;
+                }
+
+                float score = 120f + Mathf.Min(missingHp, healAmount) * 24f;
+                if (snapshot.ActingPlayer.fortHp <= 8)
+                {
+                    score += 180f;
+                }
+
+                return score;
+            }
+
+            if (target.type == CardTargetType.AllyUnit && target.targetCard != null)
+            {
+                int missingHp = GetCardMissingHp(target.targetCard);
+                if (missingHp <= 0)
+                {
+                    return -200f;
+                }
+
+                return 110f + Mathf.Min(missingHp, healAmount) * 22f + GetCardCurrentDamage(target.targetCard) * 14f;
+            }
+
+            return 0f;
+        }
+
+        private static float ScoreSupportSpell(ComputerGameSnapshot snapshot, CardRuntimeState runtimeCard, CardTarget target)
+        {
+            if (target.type != CardTargetType.AllyUnit || target.targetCard == null)
+            {
+                return -80f;
+            }
+
+            float score = 100f + GetCardCurrentDamage(target.targetCard) * 18f;
+            Unit targetUnit = FindUnitForCard(target.targetCard);
+            if (targetUnit != null && targetUnit.CanAttack())
+            {
+                score += 90f;
+            }
+
+            score += Mathf.Max(0f, ScoreThreatNearEnemyFort(snapshot, target.tile));
+            return score;
+        }
+
+        private static float ScoreDebuffSpell(ComputerGameSnapshot snapshot, CardRuntimeState runtimeCard, CardTarget target)
+        {
+            if (target.type != CardTargetType.EnemyUnit || target.targetCard == null)
+            {
+                return -80f;
+            }
+
+            float score = 130f + GetCardCurrentDamage(target.targetCard) * 20f + ScoreThreatNearOwnFort(snapshot, target.tile);
+            if (runtimeCard.SourceCard.MatchesSpecialCard(SpecialCardIds.SpellFreeze, "Freeze"))
+            {
+                score += 80f;
+            }
+
+            Unit targetUnit = FindUnitForCard(target.targetCard);
+            if (targetUnit != null && targetUnit.CanAttack())
+            {
+                score += 70f;
+            }
+
+            return score;
+        }
+
+        private static float ScoreStructureDisruption(ComputerGameSnapshot snapshot, CardTarget target, float baseScore)
+        {
+            if (target.targetCard == null)
+            {
+                return 0f;
+            }
+
+            float score = baseScore;
+            if (target.targetCard.CurrentRevenue.HasValue)
+            {
+                score += target.targetCard.CurrentRevenue.Value * 45f;
+            }
+
+            score += ScoreThreatNearOwnFort(snapshot, target.tile) * 0.35f;
+            return score;
+        }
+
+        private static float ScoreRevivalPlacement(ComputerGameSnapshot snapshot, CardRuntimeState revivedRuntime, AxialCoord coord)
+        {
+            bool isCharacterCard = revivedRuntime != null && revivedRuntime.SourceCard is CharacterCardData;
+            float placementScore = ScorePlacementTile(snapshot, coord, isCharacterCard);
+            float bodyScore = revivedRuntime != null ? GetCardCurrentDamage(revivedRuntime) * 18f + GetCardCurrentHp(revivedRuntime) * 6f : 0f;
+            return 180f + placementScore + bodyScore;
+        }
+
+        private static int GetSpellDamageAmount(CardRuntimeState runtimeCard)
+        {
+            if (runtimeCard == null)
+            {
+                return 0;
+            }
+
+            if (runtimeCard.SourceCard != null && runtimeCard.SourceCard.MatchesSpecialCard(SpecialCardIds.SpellSabotage, "Sabotage"))
+            {
+                return 0;
+            }
+
+            if (runtimeCard.SourceCard != null && runtimeCard.SourceCard.MatchesSpecialCard(SpecialCardIds.SpellTaxCollection, "Tax collection"))
+            {
+                return 0;
+            }
+
+            return runtimeCard.SpellEffectPower.HasValue ? Mathf.Max(0, runtimeCard.SpellEffectPower.Value) : 0;
+        }
+
+        private static int GetSpellHealAmount(CardRuntimeState runtimeCard)
+        {
+            return runtimeCard != null && runtimeCard.SpellEffectPower.HasValue
+                ? Mathf.Max(0, runtimeCard.SpellEffectPower.Value)
+                : 0;
+        }
+
+        private static int GetCardCurrentHp(CardRuntimeState card)
+        {
+            if (card == null)
+            {
+                return 0;
+            }
+
+            if (card.CurrentHp.HasValue)
+            {
+                return Mathf.Max(0, card.CurrentHp.Value);
+            }
+
+            if (card.SourceCard is CharacterCardData characterCard)
+            {
+                return Mathf.Max(0, characterCard.maxHp);
+            }
+
+            if (card.SourceCard is WorldEffectCardData worldEffectCard && worldEffectCard.structureHp.HasValue)
+            {
+                return Mathf.Max(0, worldEffectCard.structureHp.Value);
+            }
+
+            return 0;
+        }
+
+        private static int GetCardCurrentDamage(CardRuntimeState card)
+        {
+            if (card == null)
+            {
+                return 0;
+            }
+
+            if (card.CurrentDamage.HasValue)
+            {
+                return Mathf.Max(0, card.CurrentDamage.Value);
+            }
+
+            if (card.SourceCard is CharacterCardData characterCard)
+            {
+                return Mathf.Max(0, characterCard.attackDamage);
+            }
+
+            if (card.SourceCard is WorldEffectCardData worldEffectCard && worldEffectCard.structureDamage.HasValue)
+            {
+                return Mathf.Max(0, worldEffectCard.structureDamage.Value);
+            }
+
+            return 0;
+        }
+
+        private static int GetCardMissingHp(CardRuntimeState card)
+        {
+            if (card == null)
+            {
+                return 0;
+            }
+
+            int currentHp = GetCardCurrentHp(card);
+            int maxHp = 0;
+
+            if (card.SourceCard is CharacterCardData characterCard)
+            {
+                maxHp = Mathf.Max(0, characterCard.maxHp);
+            }
+            else if (card.SourceCard is WorldEffectCardData worldEffectCard && worldEffectCard.structureHp.HasValue)
+            {
+                maxHp = Mathf.Max(0, worldEffectCard.structureHp.Value);
+            }
+
+            return Mathf.Max(0, maxHp - currentHp);
+        }
+
+        private static Unit FindUnitForCard(CardRuntimeState runtimeCard)
+        {
+            if (runtimeCard == null)
+            {
+                return null;
+            }
+
+            Unit[] units = Object.FindObjectsByType<Unit>(FindObjectsSortMode.None);
+            for (int i = 0; i < units.Length; i++)
+            {
+                Unit unit = units[i];
+                if (unit != null && ReferenceEquals(unit.RuntimeCard, runtimeCard))
+                {
+                    return unit;
+                }
+            }
+
+            return null;
+        }
+
+        private static float ScoreThreatNearEnemyFort(ComputerGameSnapshot snapshot, AxialCoord targetCoord)
+        {
+            if (!TryGetFortTile(snapshot, snapshot?.OpponentPlayerKey, out AxialCoord fortCoord))
+            {
+                return 0f;
+            }
+
+            int distance = HexUtils.GetAxialDistance(targetCoord, fortCoord);
+            return Mathf.Max(0f, 6 - distance) * 18f;
+        }
+
+        private static float ScoreThreatNearOwnFort(ComputerGameSnapshot snapshot, AxialCoord targetCoord)
+        {
+            if (snapshot?.HexGrid == null)
+            {
+                return 0f;
+            }
+
+            HexTile targetTile = snapshot.HexGrid.GetTile(targetCoord);
+            return ScoreThreatNearOwnFort(snapshot, targetTile);
         }
 
         private static float ScoreAttackTarget(ComputerGameSnapshot snapshot, Unit attacker, HexTile targetTile, Unit targetUnit, ActionType actionType)

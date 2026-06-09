@@ -1144,8 +1144,11 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
         if (IsHandFull(currentPlayer))
         {
-            Debug.Log(currentPlayer.playerName + " skipped buy: hand is full.");
-            return false;
+            if (!TryComputerDiscardBeforeBuy())
+            {
+                Debug.Log(currentPlayer.playerName + " skipped buy: hand is full.");
+                return false;
+            }
         }
 
         string ownerKey = ResolveCurrentOwnerKey();
@@ -1184,6 +1187,242 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         Debug.Log(currentPlayer.playerName + " hand count is now: " + currentPlayer.handCount);
 
         return true;
+    }
+
+    private bool TryComputerDiscardBeforeBuy()
+    {
+        if (currentPlayer == null || currentPlayer.handCards == null || currentPlayer.handCards.Count == 0)
+        {
+            return false;
+        }
+
+        if (discardCardsUsedThisTurn >= gameConfig.maxDiscardCardsPerTurn)
+        {
+            return false;
+        }
+
+        CardRuntimeState discardCandidate = ChooseComputerCardToDiscard();
+        if (discardCandidate == null)
+        {
+            return false;
+        }
+
+        float usefulness = EvaluateComputerCardUsefulness(discardCandidate);
+        if (usefulness >= 8000f)
+        {
+            return false;
+        }
+
+        RemoveCardFromHand(currentPlayer, discardCandidate);
+        currentPlayer.discardCount += 1;
+        currentPlayer.money += gameConfig.discardMoneyReward;
+        discardCardsUsedThisTurn += 1;
+
+        string cardName = discardCandidate.SourceCard != null ? discardCandidate.SourceCard.DisplayName : "Unknown Card";
+        Debug.Log(currentPlayer.playerName + " discarded " + cardName + " before buying and gained " + gameConfig.discardMoneyReward + " money.");
+        return true;
+    }
+
+    private CardRuntimeState ChooseComputerCardToDiscard()
+    {
+        if (currentPlayer == null || currentPlayer.handCards == null || currentPlayer.handCards.Count == 0)
+        {
+            return null;
+        }
+
+        CardRuntimeState weakestCard = null;
+        float weakestScore = float.MaxValue;
+
+        for (int i = 0; i < currentPlayer.handCards.Count; i++)
+        {
+            CardRuntimeState candidate = currentPlayer.handCards[i];
+            if (candidate?.SourceCard == null)
+            {
+                return candidate;
+            }
+
+            float score = EvaluateComputerCardUsefulness(candidate);
+            if (score < weakestScore)
+            {
+                weakestScore = score;
+                weakestCard = candidate;
+            }
+        }
+
+        return weakestCard;
+    }
+
+    private float EvaluateComputerCardUsefulness(CardRuntimeState card)
+    {
+        if (card?.SourceCard == null || currentPlayer == null)
+        {
+            return float.MinValue;
+        }
+
+        float score = 0f;
+        int duplicateCount = CountMatchingCardsInHand(card.SourceCard);
+
+        if (card.SourceCard is SpellCardData spellCard)
+        {
+            score += ScoreComputerSpellInHand(spellCard);
+        }
+        else if (card.SourceCard is CharacterCardData characterCard)
+        {
+            score += 120f + characterCard.attackDamage * 18f + characterCard.maxHp * 8f;
+            if (currentPlayer.money < characterCard.cost)
+            {
+                score -= 25f;
+            }
+        }
+        else if (card.SourceCard is WorldEffectCardData worldEffectCard)
+        {
+            score += worldEffectCard.category == WorldEffectCategory.ResourceField ? 130f : 90f;
+            if (worldEffectCard.revenuePerTurn.HasValue)
+            {
+                score += worldEffectCard.revenuePerTurn.Value * 30f;
+            }
+
+            if (currentPlayer.money < worldEffectCard.cost)
+            {
+                score -= 20f;
+            }
+        }
+        else
+        {
+            score += 40f;
+        }
+
+        if (duplicateCount > 1)
+        {
+            score -= (duplicateCount - 1) * 18f;
+        }
+
+        return score;
+    }
+
+    private float ScoreComputerSpellInHand(SpellCardData spellCard)
+    {
+        if (spellCard == null || currentPlayer == null)
+        {
+            return 0f;
+        }
+
+        float score = 70f;
+        string aiOwnerKey = ResolveCurrentOwnerKey();
+        string opponentOwnerKey = aiOwnerKey == PlayerKeyResolver.PlayerTwoKey ? PlayerKeyResolver.PlayerOneKey : PlayerKeyResolver.PlayerTwoKey;
+        Unit[] units = FindObjectsByType<Unit>(FindObjectsSortMode.None);
+
+        switch (spellCard.effectType)
+        {
+            case SpellEffectType.Damage:
+                score += currentPlayer.money >= spellCard.cost ? 25f : -15f;
+                if (player1 != null && spellCard.effectPower >= player1.fortHp)
+                {
+                    score += 10000f;
+                }
+
+                for (int i = 0; i < units.Length; i++)
+                {
+                    Unit unit = units[i];
+                    if (unit == null || unit.owner != opponentOwnerKey)
+                    {
+                        continue;
+                    }
+
+                    score = Mathf.Max(score, spellCard.effectPower >= unit.health ? 260f + unit.attack * 30f : 90f + unit.attack * 12f);
+                }
+                break;
+
+            case SpellEffectType.Heal:
+                if (player2 != null && player2.fortHp < gameConfig.startingFortHp)
+                {
+                    score += 180f + (gameConfig.startingFortHp - player2.fortHp) * 18f;
+                }
+
+                for (int i = 0; i < units.Length; i++)
+                {
+                    Unit unit = units[i];
+                    if (unit == null || unit.owner != aiOwnerKey || unit.sourceCharacterCardData == null)
+                    {
+                        continue;
+                    }
+
+                    int missingHp = Mathf.Max(0, unit.sourceCharacterCardData.maxHp - unit.health);
+                    if (missingHp > 0)
+                    {
+                        score = Mathf.Max(score, 140f + missingHp * 16f + unit.attack * 10f);
+                    }
+                }
+                break;
+
+            case SpellEffectType.Buff:
+            case SpellEffectType.Boost:
+            case SpellEffectType.Utility:
+                for (int i = 0; i < units.Length; i++)
+                {
+                    Unit unit = units[i];
+                    if (unit == null || unit.owner != aiOwnerKey)
+                    {
+                        continue;
+                    }
+
+                    float candidateScore = 120f + unit.attack * 15f;
+                    if (unit.CanAttack())
+                    {
+                        candidateScore += 70f;
+                    }
+
+                    score = Mathf.Max(score, candidateScore);
+                }
+                break;
+
+            case SpellEffectType.Debuff:
+                for (int i = 0; i < units.Length; i++)
+                {
+                    Unit unit = units[i];
+                    if (unit == null || unit.owner != opponentOwnerKey)
+                    {
+                        continue;
+                    }
+
+                    score = Mathf.Max(score, 150f + unit.attack * 20f);
+                }
+                break;
+        }
+
+        if (spellCard.MatchesSpecialCard(SpecialCardIds.SpellRevival, "Revival"))
+        {
+            int lookbackTurns = Mathf.Max(0, spellCard.effectDurationTurns);
+            score += DeathHistoryManager.GetOrCreate().GetRecentCharacterChoices(lookbackTurns).Count > 0 ? 220f : -120f;
+        }
+
+        return score;
+    }
+
+    private int CountMatchingCardsInHand(CardData card)
+    {
+        if (card == null || currentPlayer?.handCards == null)
+        {
+            return 0;
+        }
+
+        int count = 0;
+        for (int i = 0; i < currentPlayer.handCards.Count; i++)
+        {
+            CardRuntimeState runtimeCard = currentPlayer.handCards[i];
+            if (runtimeCard?.SourceCard == null)
+            {
+                continue;
+            }
+
+            if (ReferenceEquals(runtimeCard.SourceCard, card)
+                || string.Equals(runtimeCard.SourceCard.DisplayName, card.DisplayName, System.StringComparison.OrdinalIgnoreCase))
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     private bool HasCharacterCardInHand(PlayerState player)

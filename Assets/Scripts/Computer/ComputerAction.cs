@@ -27,6 +27,7 @@ namespace FortGame.Computer
         // Execution payload used by the legal-action reader and executor.
         public string actingPlayerId;
         public CardRuntimeState sourceCard;
+        public CardRuntimeState auxiliaryCard;
         public CardTarget target;
         public Unit actingUnit;
         public HexTile destinationTile;

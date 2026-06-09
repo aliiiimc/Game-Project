@@ -52,6 +52,11 @@ namespace FortGame.Computer
             return sortedActions;
         }
 
+        public float GetScore(ComputerAction action, PlayerState myState, int currentTurn)
+        {
+            return CalculateScore(action, myState, currentTurn);
+        }
+
 
         // Ali: scores one legal action. Higher score means the AI is more likely to choose it.
         private float CalculateScore(ComputerAction action, PlayerState myState, int currentTurn)

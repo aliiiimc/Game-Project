@@ -50,6 +50,11 @@ namespace FortGame.Computer
                 return false;
             }
 
+            if (IsRevivalAction(action))
+            {
+                return TryExecuteRevivalAction(action, snapshot);
+            }
+
             CardPlayService cardPlayService = ResolveCardPlayService(snapshot);
             if (cardPlayService == null)
             {
@@ -66,6 +71,40 @@ namespace FortGame.Computer
             {
                 Debug.LogWarning($"[ComputerActionExecutor] CardPlayService failed {action.actionName}: {playResult.ReasonCode} - {playResult.Message}");
                 return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryExecuteRevivalAction(ComputerAction action, ComputerGameSnapshot snapshot)
+        {
+            if (action == null || snapshot == null || action.auxiliaryCard == null || action.target.type != CardTargetType.Tile)
+            {
+                return false;
+            }
+
+            CardPlayService cardPlayService = ResolveCardPlayService(snapshot);
+            if (cardPlayService == null)
+            {
+                Debug.LogWarning("[ComputerActionExecutor] Missing CardPlayService. AI revival was blocked.");
+                return false;
+            }
+
+            string actingPlayerId = string.IsNullOrWhiteSpace(action.actingPlayerId)
+                ? snapshot.ActingPlayerKey
+                : action.actingPlayerId;
+
+            CardPlayResult reviveResult = cardPlayService.PlayCard(action.auxiliaryCard, actingPlayerId, action.target);
+            if (!reviveResult.Succeeded)
+            {
+                Debug.LogWarning($"[ComputerActionExecutor] Revival placement failed {action.actionName}: {reviveResult.ReasonCode} - {reviveResult.Message}");
+                return false;
+            }
+
+            action.sourceCard.MoveToZone(CardZone.Discard);
+            if (snapshot.ActingPlayer.handCards != null && snapshot.ActingPlayer.handCards.Remove(action.sourceCard))
+            {
+                snapshot.ActingPlayer.handCount = snapshot.ActingPlayer.handCards.Count;
             }
 
             return true;
@@ -183,6 +222,16 @@ namespace FortGame.Computer
             return actionType == ActionType.PlayUnitCard
                 || actionType == ActionType.PlayWorldEffectCard
                 || actionType == ActionType.PlaySpellCard;
+        }
+
+        private static bool IsRevivalAction(ComputerAction action)
+        {
+            return action != null
+                && action.type == ActionType.PlaySpellCard
+                && action.auxiliaryCard != null
+                && action.sourceCard != null
+                && action.sourceCard.SourceCard != null
+                && action.sourceCard.SourceCard.MatchesSpecialCard(SpecialCardIds.SpellRevival, "Revival");
         }
 
 

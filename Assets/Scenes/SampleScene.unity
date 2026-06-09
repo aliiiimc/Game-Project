@@ -742,16 +742,16 @@ MonoBehaviour:
   infoMessageText: {fileID: 0}
   errorMessageText: {fileID: 0}
   errorMessageDuration: 3
-  playerFortHpText: {fileID: 0}
-  playerMoneyText: {fileID: 0}
-  playerCardsText: {fileID: 0}
-  playerHpFill: {fileID: 0}
-  enemyFortHpText: {fileID: 0}
-  enemyMoneyText: {fileID: 0}
-  enemyCardsText: {fileID: 0}
-  enemyHpFill: {fileID: 0}
-  currentRoundText: {fileID: 0}
-  currentPlayerText: {fileID: 0}
+  playerFortHpText: {fileID: 502883361}
+  playerMoneyText: {fileID: 1977016365}
+  playerCardsText: {fileID: 481074077}
+  playerHpFill: {fileID: 156232526}
+  enemyFortHpText: {fileID: 248639659}
+  enemyMoneyText: {fileID: 1839240830}
+  enemyCardsText: {fileID: 1100056106}
+  enemyHpFill: {fileID: 696734475}
+  currentRoundText: {fileID: 1425818655}
+  currentPlayerText: {fileID: 308165018}
   upperPanelTransform: {fileID: 139018001}
   spellAnnouncementText: {fileID: 0}
   spellAnnouncementDuration: 2.5

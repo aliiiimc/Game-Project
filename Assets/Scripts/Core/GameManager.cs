@@ -35,12 +35,18 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
     public Transform buyCostMenuParent;
     public float buyCostOptionSpacing = 110f;
     private GameObject buyCostOptionsRoot;
+    private const int MinBuyMenuCost = 2;
+    private const int MaxBuyMenuCost = 7;
+    private const float BuyCostOptionWidth = 95f;
+    private const float BuyCostOptionHeight = 44f;
 
     [Header("Action Buttons")]
     public GameObject buyButtonObject;
     public string buyButtonObjectName = "TestBuycard";
     public GameObject skipBuyButtonObject;
     public string skipBuyButtonObjectName = "SkipBuy";
+    public GameObject playButtonObject;
+    public string playButtonObjectName = "Play";
     public GameObject confirmBuyWithFullHandButtonObject;
     public string confirmBuyWithFullHandButtonObjectName = "ConfirmBuyWithFullHand";
     public GameObject cancelBuyButtonObject;
@@ -49,6 +55,8 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
     public string discardButtonObjectName = "DiscardCard";
     public GameObject endTurnButtonObject;
     public string endTurnButtonObjectName = "End Turn";
+    public Sprite actionButtonFrame;
+    public bool autoPositionActionButtons = false;
 
     public HandUI handUI; //HandUI gère l'affichage des cartes dans la main
 
@@ -74,6 +82,18 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         SetupGame();
         SetupBuyCostMenu();
         ResolveActionButtonReferences();
+        EnsurePlayButtonExists();
+        if (autoPositionActionButtons)
+        {
+            ConfigureActionButtonLayout();
+        }
+        ApplyActionButtonStyle(buyButtonObject);
+        ApplyActionButtonStyle(skipBuyButtonObject);
+        ApplyActionButtonStyle(playButtonObject);
+        ApplyActionButtonStyle(confirmBuyWithFullHandButtonObject);
+        ApplyActionButtonStyle(cancelBuyButtonObject);
+        ApplyActionButtonStyle(discardButtonObject);
+        ApplyActionButtonStyle(endTurnButtonObject);
         RefreshActionButtons();
 
         // Play theme music if available
@@ -84,10 +104,176 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
     {
         if (buyButtonObject == null) buyButtonObject = FindGameObjectByName(buyButtonObjectName);
         if (skipBuyButtonObject == null) skipBuyButtonObject = FindGameObjectByName(skipBuyButtonObjectName);
+        if (playButtonObject == null) playButtonObject = FindGameObjectByName(playButtonObjectName);
         if (confirmBuyWithFullHandButtonObject == null) confirmBuyWithFullHandButtonObject = FindGameObjectByName(confirmBuyWithFullHandButtonObjectName);
         if (cancelBuyButtonObject == null) cancelBuyButtonObject = FindGameObjectByName(cancelBuyButtonObjectName);
         if (discardButtonObject == null) discardButtonObject = FindGameObjectByName(discardButtonObjectName);
         if (endTurnButtonObject == null) endTurnButtonObject = FindGameObjectByName(endTurnButtonObjectName);
+    }
+
+    private void EnsurePlayButtonExists()
+    {
+        if (playButtonObject != null)
+        {
+            if (HasPersistentOnClick(playButtonObject))
+            {
+                GameObject legacyButton = playButtonObject;
+                legacyButton.name = playButtonObjectName + "_Legacy";
+                legacyButton.SetActive(false);
+                playButtonObject = CreateCleanActionButton(legacyButton, playButtonObjectName);
+            }
+
+            ConfigureActionButton(playButtonObject, "Play", GoToPlayPhase);
+            return;
+        }
+
+        GameObject template = endTurnButtonObject != null ? endTurnButtonObject : buyButtonObject;
+        if (template == null)
+        {
+            return;
+        }
+
+        playButtonObject = CreateCleanActionButton(template, playButtonObjectName);
+        playButtonObject.name = playButtonObjectName;
+        playButtonObject.SetActive(true);
+        ConfigureActionButton(playButtonObject, "Play", GoToPlayPhase);
+    }
+
+    private bool HasPersistentOnClick(GameObject buttonObject)
+    {
+        if (buttonObject == null)
+        {
+            return false;
+        }
+
+        Button button = buttonObject.GetComponent<Button>();
+        return button != null && button.onClick.GetPersistentEventCount() > 0;
+    }
+
+    private GameObject CreateCleanActionButton(GameObject template, string objectName)
+    {
+        Transform parent = template.transform.parent;
+        GameObject buttonObject = new GameObject(objectName, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button));
+        buttonObject.transform.SetParent(parent, false);
+        buttonObject.layer = template.layer;
+
+        Image templateImage = template.GetComponent<Image>();
+        Image image = buttonObject.GetComponent<Image>();
+        if (templateImage != null && image != null)
+        {
+            image.color = templateImage.color;
+            image.sprite = templateImage.sprite;
+            image.type = templateImage.type;
+            image.pixelsPerUnitMultiplier = templateImage.pixelsPerUnitMultiplier;
+        }
+
+        Button button = buttonObject.GetComponent<Button>();
+        Image targetGraphic = buttonObject.GetComponent<Image>();
+        if (button != null && targetGraphic != null)
+        {
+            button.targetGraphic = targetGraphic;
+            button.transition = Selectable.Transition.ColorTint;
+        }
+
+        CreateActionButtonLabel(buttonObject.transform, template);
+        return buttonObject;
+    }
+
+    private void CreateActionButtonLabel(Transform parent, GameObject template)
+    {
+        GameObject labelObject = new GameObject("Text (TMP)", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+        labelObject.transform.SetParent(parent, false);
+
+        RectTransform labelRect = labelObject.GetComponent<RectTransform>();
+        labelRect.anchorMin = Vector2.zero;
+        labelRect.anchorMax = Vector2.one;
+        labelRect.offsetMin = Vector2.zero;
+        labelRect.offsetMax = Vector2.zero;
+
+        TextMeshProUGUI label = labelObject.GetComponent<TextMeshProUGUI>();
+        TextMeshProUGUI templateLabel = template.GetComponentInChildren<TextMeshProUGUI>(true);
+        if (templateLabel != null)
+        {
+            label.font = templateLabel.font;
+            label.fontSharedMaterial = templateLabel.fontSharedMaterial;
+            label.color = templateLabel.color;
+            label.fontSize = templateLabel.fontSize;
+            label.enableAutoSizing = templateLabel.enableAutoSizing;
+            label.fontSizeMin = templateLabel.fontSizeMin;
+            label.fontSizeMax = templateLabel.fontSizeMax;
+        }
+
+        label.alignment = TextAlignmentOptions.Center;
+        label.raycastTarget = false;
+        label.text = "Play";
+    }
+
+    private void ConfigureActionButtonLayout()
+    {
+        SetButtonRect(endTurnButtonObject, new Vector2(-32f, -32f), new Vector2(220f, 70f), new Vector2(1f, 1f), new Vector2(1f, 1f));
+        SetButtonRect(playButtonObject, new Vector2(253.4f, -286.67f), new Vector2(280f, 80f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f));
+    }
+
+    private void ConfigureActionButton(GameObject buttonObject, string labelText, UnityEngine.Events.UnityAction onClick)
+    {
+        if (buttonObject == null)
+        {
+            return;
+        }
+
+        Button button = buttonObject.GetComponent<Button>();
+        if (button != null)
+        {
+            button.onClick.RemoveAllListeners();
+            if (onClick != null)
+            {
+                button.onClick.AddListener(onClick);
+            }
+        }
+
+        SetButtonText(button, labelText);
+        ApplyActionButtonStyle(buttonObject);
+    }
+
+    private void ApplyActionButtonStyle(GameObject buttonObject)
+    {
+        if (buttonObject == null)
+        {
+            return;
+        }
+
+        Image image = buttonObject.GetComponent<Image>();
+        if (image != null && actionButtonFrame != null)
+        {
+            image.sprite = actionButtonFrame;
+            image.type = Image.Type.Sliced;
+            image.preserveAspect = false;
+        }
+
+        if (buttonObject.GetComponent<FortGame.UI.UIButtonHoverScale>() == null)
+        {
+            buttonObject.AddComponent<FortGame.UI.UIButtonHoverScale>();
+        }
+    }
+
+    private void SetButtonRect(GameObject buttonObject, Vector2 anchoredPosition, Vector2 sizeDelta, Vector2 anchorMin, Vector2 anchorMax)
+    {
+        if (buttonObject == null)
+        {
+            return;
+        }
+
+        RectTransform rect = buttonObject.GetComponent<RectTransform>();
+        if (rect == null)
+        {
+            return;
+        }
+
+        rect.anchorMin = anchorMin;
+        rect.anchorMax = anchorMax;
+        rect.pivot = anchorMax;
+        rect.anchoredPosition = anchoredPosition;
+        rect.sizeDelta = sizeDelta;
     }
 
     private GameObject FindGameObjectByName(string name)
@@ -225,13 +411,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
     public void BuyCard()
     {
-        int defaultCost = gameConfig != null ? gameConfig.buyCost : -1;
-        if (!HasCardsAtBuyCost(defaultCost))
-        {
-            defaultCost = GetLowestAvailableBuyCost();
-        }
-
-        BuyCardForCost(defaultCost);
+        ToggleBuyCostOptions();
     }
 
     public void BuyCardForCost2() { BuyCardForCost(2); }
@@ -239,6 +419,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
     public void BuyCardForCost4() { BuyCardForCost(4); }
     public void BuyCardForCost5() { BuyCardForCost(5); }
     public void BuyCardForCost6() { BuyCardForCost(6); }
+    public void BuyCardForCost7() { BuyCardForCost(7); }
 
     public void BuyCardForCost(int selectedCost)
     {
@@ -254,8 +435,6 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
             return;
         }
 
-        HideBuyCostOptions();
-
         if (hasBoughtThisTurn)
         {
             Debug.Log(currentPlayer.playerName + " already bought a card this turn.");
@@ -264,9 +443,11 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
         if (selectedCost <= 0)
         {
-            Debug.Log("Choose a valid buy cost.");
+            ShowBuyCostOptions();
             return;
         }
+
+        HideBuyCostOptions();
 
         if (currentPlayer.money < selectedCost)
         {
@@ -490,6 +671,11 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         }
         isBuyDecisionPending = false;
         pendingBuyCost = -1;
+        ClearSelectedCardToDiscard();
+        if (handUI != null)
+        {
+            handUI.ClearVisualSelection();
+        }
         Debug.Log(currentPlayer.playerName + " canceled the buy and stayed in Buy phase.");
         LogStateSummary();
 
@@ -754,7 +940,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
     private void CreateBuyCostOptions(Button buyButton)
     {
-        List<int> costs = GetAvailableBuyCosts(false);
+        List<int> costs = GetBuyMenuCosts();
         if (costs.Count == 0)
         {
             return;
@@ -766,31 +952,31 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         buyCostOptionsRoot = new GameObject("BuyCostOptions");
         RectTransform rootRect = buyCostOptionsRoot.AddComponent<RectTransform>();
         buyCostOptionsRoot.transform.SetParent(parent, false);
+        buyCostOptionsRoot.transform.SetAsLastSibling();
 
         if (buyButtonRect != null)
         {
-            rootRect.anchorMin = buyButtonRect.anchorMin;
-            rootRect.anchorMax = buyButtonRect.anchorMax;
-            rootRect.pivot = buyButtonRect.pivot;
-            rootRect.anchoredPosition = buyButtonRect.anchoredPosition + new Vector2(0f, 90f);
-            rootRect.sizeDelta = new Vector2(costs.Count * buyCostOptionSpacing, 50f);
+            PositionBuyCostOptions(rootRect, buyButtonRect, costs.Count);
         }
 
         for (int i = 0; i < costs.Count; i++)
         {
-            CreateBuyCostOptionButton(buyButton, costs[i], i);
+            CreateBuyCostOptionButton(buyButton, costs[i], i, costs.Count);
         }
     }
 
-    private void CreateBuyCostOptionButton(Button buyButton, int selectedCost, int index)
+    private void CreateBuyCostOptionButton(Button buyButton, int selectedCost, int index, int optionCount)
     {
         //Ali: ces boutons sont neufs, donc ils ne gardent pas l'ancien OnClick Unity du bouton Buy.
         GameObject buttonObject = new GameObject("BuyCost" + selectedCost + "Option");
         buttonObject.transform.SetParent(buyCostOptionsRoot.transform, false);
 
         RectTransform buttonRect = buttonObject.AddComponent<RectTransform>();
-        buttonRect.sizeDelta = new Vector2(95f, 44f);
-        buttonRect.anchoredPosition = new Vector2(index * buyCostOptionSpacing, 0f);
+        buttonRect.anchorMin = new Vector2(0.5f, 0.5f);
+        buttonRect.anchorMax = new Vector2(0.5f, 0.5f);
+        buttonRect.pivot = new Vector2(0.5f, 0.5f);
+        buttonRect.sizeDelta = new Vector2(BuyCostOptionWidth, BuyCostOptionHeight);
+        buttonRect.anchoredPosition = new Vector2((index - (optionCount - 1) * 0.5f) * buyCostOptionSpacing, 0f);
 
         Image image = buttonObject.AddComponent<Image>();
         Image buyButtonImage = buyButton.GetComponent<Image>();
@@ -847,7 +1033,23 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
             return;
         }
 
-        buyCostOptionsRoot.SetActive(!buyCostOptionsRoot.activeSelf);
+        if (buyCostOptionsRoot.activeSelf)
+        {
+            HideBuyCostOptions();
+        }
+        else
+        {
+            ShowBuyCostOptions();
+        }
+    }
+
+    private void ShowBuyCostOptions()
+    {
+        if (buyCostOptionsRoot != null)
+        {
+            buyCostOptionsRoot.SetActive(true);
+            buyCostOptionsRoot.transform.SetAsLastSibling();
+        }
     }
 
     private void HideBuyCostOptions()
@@ -856,6 +1058,41 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         {
             buyCostOptionsRoot.SetActive(false);
         }
+    }
+
+    private List<int> GetBuyMenuCosts()
+    {
+        List<int> costs = new List<int>();
+        for (int cost = MinBuyMenuCost; cost <= MaxBuyMenuCost; cost++)
+        {
+            costs.Add(cost);
+        }
+
+        return costs;
+    }
+
+    private void PositionBuyCostOptions(RectTransform rootRect, RectTransform buyButtonRect, int optionCount)
+    {
+        rootRect.anchorMin = buyButtonRect.anchorMin;
+        rootRect.anchorMax = buyButtonRect.anchorMax;
+        rootRect.pivot = buyButtonRect.pivot;
+
+        float totalWidth = (optionCount - 1) * buyCostOptionSpacing + BuyCostOptionWidth;
+        rootRect.sizeDelta = new Vector2(totalWidth, BuyCostOptionHeight + 6f);
+
+        Vector2 position = buyButtonRect.anchoredPosition + new Vector2(0f, 90f);
+        RectTransform parentRect = rootRect.parent as RectTransform;
+        if (parentRect != null && Mathf.Approximately(rootRect.anchorMin.x, rootRect.anchorMax.x))
+        {
+            float anchorX = (rootRect.anchorMin.x - parentRect.pivot.x) * parentRect.rect.width;
+            float halfWidth = totalWidth * 0.5f;
+            float minCenterX = -parentRect.pivot.x * parentRect.rect.width + halfWidth;
+            float maxCenterX = (1f - parentRect.pivot.x) * parentRect.rect.width - halfWidth;
+            float centerX = anchorX + position.x;
+            position.x = Mathf.Clamp(centerX, minCenterX, maxCenterX) - anchorX;
+        }
+
+        rootRect.anchoredPosition = position;
     }
 
     private Button FindButtonByObjectName(string objectName)
@@ -999,6 +1236,11 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         if (isBuyDecisionPending == true) { Debug.Log("Resolve buy decision first, then you can play"); return; }
         if (mustDiscardAfterBuy == true) { Debug.Log("You must Discard before leaving Buy phase."); return; }
 
+        ClearSelectedCardToDiscard();
+        if (handUI != null)
+        {
+            handUI.ClearVisualSelection();
+        }
         currentPhase = GamePhase.Play;
         LogStateSummary();
     }
@@ -1055,6 +1297,11 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
         currentPhase = GamePhase.End;
         Debug.Log("Ending turn for " + currentPlayer.playerName);
+        ClearSelectedCardToDiscard();
+        if (handUI != null)
+        {
+            handUI.ClearVisualSelection();
+        }
         string endingOwnerKey = ResolveCurrentOwnerKey();
         ConsumeUnitTimedEffectsForOwner(endingOwnerKey);
         SpellManager.GetOrCreate().ConsumePersistentDurations(endingOwnerKey);
@@ -1143,6 +1390,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         {
             SetObjectActive(buyButtonObject, false);
             SetObjectActive(skipBuyButtonObject, false);
+            SetObjectActive(playButtonObject, false);
             SetObjectActive(confirmBuyWithFullHandButtonObject, false);
             SetObjectActive(cancelBuyButtonObject, false);
             SetObjectActive(discardButtonObject, false);
@@ -1158,16 +1406,19 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         if (isBuy && !isPending && !isMustDiscard)
         {
             SetObjectActive(buyButtonObject, !hasBoughtThisTurn);
-            SetObjectActive(skipBuyButtonObject, true);
+            SetObjectActive(skipBuyButtonObject, false);
+            SetObjectActive(playButtonObject, true);
             SetObjectActive(confirmBuyWithFullHandButtonObject, false);
             SetObjectActive(cancelBuyButtonObject, false);
+            SetButtonInteractable(discardButtonObject, selectedCardToDiscard != null);
             SetObjectActive(discardButtonObject, true);
-            SetObjectActive(endTurnButtonObject, !hasBoughtThisTurn);
+            SetObjectActive(endTurnButtonObject, true);
         }
         else if (isBuy && isPending && !isMustDiscard)
         {
             SetObjectActive(buyButtonObject, false);
             SetObjectActive(skipBuyButtonObject, false);
+            SetObjectActive(playButtonObject, false);
             SetObjectActive(confirmBuyWithFullHandButtonObject, true);
             SetObjectActive(cancelBuyButtonObject, true);
             SetObjectActive(discardButtonObject, false);
@@ -1175,18 +1426,20 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         }
         else if (isBuy && isMustDiscard)
         {
-            bool hasSelected = selectedCardToDiscard != null;
             SetObjectActive(buyButtonObject, false);
             SetObjectActive(skipBuyButtonObject, false);
+            SetObjectActive(playButtonObject, false);
             SetObjectActive(confirmBuyWithFullHandButtonObject, false);
             SetObjectActive(cancelBuyButtonObject, false);
-            SetObjectActive(discardButtonObject, hasSelected);
+            SetObjectActive(discardButtonObject, true);
+            SetButtonInteractable(discardButtonObject, selectedCardToDiscard != null);
             SetObjectActive(endTurnButtonObject, false);
         }
         else if (isPlay)
         {
             SetObjectActive(buyButtonObject, false);
             SetObjectActive(skipBuyButtonObject, false);
+            SetObjectActive(playButtonObject, false);
             SetObjectActive(confirmBuyWithFullHandButtonObject, false);
             SetObjectActive(cancelBuyButtonObject, false);
             SetObjectActive(discardButtonObject, false);
@@ -1196,6 +1449,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         {
             SetObjectActive(buyButtonObject, false);
             SetObjectActive(skipBuyButtonObject, false);
+            SetObjectActive(playButtonObject, false);
             SetObjectActive(confirmBuyWithFullHandButtonObject, false);
             SetObjectActive(cancelBuyButtonObject, false);
             SetObjectActive(discardButtonObject, false);
@@ -1206,6 +1460,20 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
     private void SetObjectActive(GameObject obj, bool active)
     {
         if (obj != null) obj.SetActive(active);
+    }
+
+    private void SetButtonInteractable(GameObject obj, bool interactable)
+    {
+        if (obj == null)
+        {
+            return;
+        }
+
+        Button button = obj.GetComponent<Button>();
+        if (button != null)
+        {
+            button.interactable = interactable;
+        }
     }
 
     public void LogStateSummary()

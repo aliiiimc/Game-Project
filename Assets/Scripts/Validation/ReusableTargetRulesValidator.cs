@@ -157,6 +157,13 @@ public sealed class ReusableTargetRulesValidator : MonoBehaviour, ICardTargetVal
                 {
                     return CardValidationResult.Invalid("WRONG_TARGET_TYPE", "Buff and boost spells can only target allied units.");
                 }
+                if (spellCard.MatchesSpecialCard(SpecialCardIds.SpellTwoXSpeed, "2x speed") || spellCard.MatchesSpecialCard(SpecialCardIds.SpellTwoXSpeed, "+2 speed"))
+                {
+                    if (target.targetCard != null && target.targetCard.SourceCard is MinerCardData)
+                    {
+                        return CardValidationResult.Invalid("NOT_APPLICABLE_TO_MINER", "Speed spell cannot be applied to a Miner.");
+                    }
+                }
                 return CardValidationResult.Valid();
 
             case SpellEffectType.Heal:

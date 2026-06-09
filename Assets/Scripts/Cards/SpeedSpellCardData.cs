@@ -4,5 +4,5 @@ using UnityEngine;
 public class SpeedSpellCardData : SpellCardData
 {
     [Header("Speed Spell Balancing")]
-    public int movementCapacityMultiplier = 2;
+    public int movementCapacityBonus = 2;
 }

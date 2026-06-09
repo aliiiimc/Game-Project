@@ -17,8 +17,8 @@ public class Unit : MonoBehaviour
     public bool hasAttackedThisTurn;
     public int movementSpentThisTurn;
     public CharacterCardData sourceCharacterCardData;
-    public int movementRangeMultiplier = 1;
-    public int movementRangeMultiplierTurnsRemaining;
+    public int movementRangeBonus;
+    public int movementRangeBonusTurnsRemaining;
     public int frozenTurnsRemaining;
 
     private CardRuntimeState runtimeCard;
@@ -186,20 +186,19 @@ public class Unit : MonoBehaviour
 
     public int GetEffectiveMoveRange()
     {
-        int multiplier = movementRangeMultiplierTurnsRemaining > 0
-            ? Mathf.Max(1, movementRangeMultiplier)
-            : 1;
+        int bonus = movementRangeBonusTurnsRemaining > 0
+            ? movementRangeBonus
+            : 0;
 
-        return Mathf.Max(0, moveRange * multiplier);
+        return Mathf.Max(0, moveRange + bonus);
     }
 
-    public void ApplyMovementRangeMultiplier(int multiplier, int turns)
+    public void ApplyMovementRangeBonus(int bonus, int turns)
     {
-        int safeMultiplier = Mathf.Max(1, multiplier);
         int safeTurns = Mathf.Max(1, turns);
 
-        movementRangeMultiplier = safeMultiplier;
-        movementRangeMultiplierTurnsRemaining = safeTurns;
+        movementRangeBonus = bonus;
+        movementRangeBonusTurnsRemaining = safeTurns;
         movementSpentThisTurn = Mathf.Min(movementSpentThisTurn, GetEffectiveMoveRange());
     }
 
@@ -216,15 +215,15 @@ public class Unit : MonoBehaviour
             frozenTurnsRemaining = Mathf.Max(0, frozenTurnsRemaining - 1);
         }
 
-        if (movementRangeMultiplierTurnsRemaining <= 0)
+        if (movementRangeBonusTurnsRemaining <= 0)
         {
             return;
         }
 
-        movementRangeMultiplierTurnsRemaining = Mathf.Max(0, movementRangeMultiplierTurnsRemaining - 1);
-        if (movementRangeMultiplierTurnsRemaining <= 0)
+        movementRangeBonusTurnsRemaining = Mathf.Max(0, movementRangeBonusTurnsRemaining - 1);
+        if (movementRangeBonusTurnsRemaining <= 0)
         {
-            movementRangeMultiplier = 1;
+            movementRangeBonus = 0;
         }
 
         movementSpentThisTurn = Mathf.Min(movementSpentThisTurn, GetEffectiveMoveRange());

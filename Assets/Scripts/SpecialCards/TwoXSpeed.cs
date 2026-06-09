@@ -2,7 +2,7 @@ using UnityEngine;
 
 public sealed class TwoXSpeed
 {
-    private const string CardName = "2x speed";
+    private const string CardName = "+2 speed";
 
     public bool IsMatch(CardRuntimeState sourceCard)
     {
@@ -26,10 +26,10 @@ public sealed class TwoXSpeed
             return CardEffectResult.Failure("NO_TARGET_CARD", "TwoXSpeed needs a target unit card.");
         }
 
-        int movementCapacityMultiplier = Mathf.Max(1, speedSpellCard.movementCapacityMultiplier);
-        if (movementCapacityMultiplier <= 1)
+        int movementCapacityBonus = speedSpellCard.movementCapacityBonus;
+        if (movementCapacityBonus <= 0)
         {
-            return CardEffectResult.Failure("INVALID_MULTIPLIER", "TwoXSpeed needs a movement multiplier above one.");
+            return CardEffectResult.Failure("INVALID_BONUS", "TwoXSpeed needs a movement bonus above zero.");
         }
 
         int durationTurns = Mathf.Max(0, speedSpellCard.effectDurationTurns);
@@ -44,8 +44,8 @@ public sealed class TwoXSpeed
             return CardEffectResult.Failure("NO_TARGET_UNIT", "TwoXSpeed could not resolve the targeted board unit.");
         }
 
-        targetUnit.ApplyMovementRangeMultiplier(movementCapacityMultiplier, durationTurns);
-        return CardEffectResult.Success($"Movement capacity x{movementCapacityMultiplier} applied for {durationTurns} turn(s).");
+        targetUnit.ApplyMovementRangeBonus(movementCapacityBonus, durationTurns);
+        return CardEffectResult.Success($"Movement capacity +{movementCapacityBonus} applied for {durationTurns} turn(s).");
     }
 
     private static Unit FindUnitForCard(CardRuntimeState card)

@@ -22,7 +22,7 @@ MonoBehaviour:
   category: 0
   structureHp:
     hasValue: 1
-    value: 8
+    value: 20
   structureDamage:
     hasValue: 0
     value: 0
@@ -46,5 +46,5 @@ MonoBehaviour:
   worldEffectMovementCapacity:
     hasValue: 0
     value: 0
-  healAmount: 2
+  healAmount: 6
   triggerRange: 1

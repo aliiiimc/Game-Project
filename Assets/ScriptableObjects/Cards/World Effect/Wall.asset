@@ -22,7 +22,7 @@ MonoBehaviour:
   category: 0
   structureHp:
     hasValue: 1
-    value: 5
+    value: 20
   structureDamage:
     hasValue: 0
     value: 0

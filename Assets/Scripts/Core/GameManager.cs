@@ -474,7 +474,14 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
             return;
         }
 
+        bool showHand = !IsComputerTurn();
+        handUI.gameObject.SetActive(showHand);
         handUI.ClearHand();
+
+        if (!showHand)
+        {
+            return;
+        }
 
         for (int i = 0; i < currentPlayer.handCards.Count; i++)
         {
@@ -499,7 +506,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
         player.handCards.Add(card);//Logique 
         SyncHandCount(player);
-        if (player == currentPlayer && handUI != null)
+        if (player == currentPlayer && handUI != null && !IsComputerTurn())
         {
             handUI.AddCardToHand(card);//Visuel 
         }
@@ -990,9 +997,10 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
     public void EndTurn()
     {
-        if (currentPhase != GamePhase.Play)
+        bool canEndFromBuy = currentPhase == GamePhase.Buy && !isBuyDecisionPending && !mustDiscardAfterBuy;
+        if (currentPhase != GamePhase.Play && !canEndFromBuy)
         {
-            Debug.Log("You can only end turn from Play phase.");
+            Debug.Log("You can only end turn from Play phase, or from Buy phase if no buy decision is pending.");
             return;
         }
 
@@ -1006,6 +1014,11 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         {
             Debug.Log("You must discard a card before ending turn.");
             return;
+        }
+
+        if (currentPhase == GamePhase.Buy)
+        {
+            currentPhase = GamePhase.Play;
         }
 
         CheckGameOver();

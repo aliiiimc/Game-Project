@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Tax collection
   m_EditorClassIdentifier: Assembly-CSharp::SpellCardData
   cardName: Tax collection
-  cost: 0
+  cost: 4
   handDeckSprite: {fileID: -2017849187300815682, guid: b82b88cf68ae2f14aad744d9418f7203, type: 3}
   description: Redirects bonus income from an enemy money-generating field to you for a limited number of turns.
   validatorId: target.rules.reusable

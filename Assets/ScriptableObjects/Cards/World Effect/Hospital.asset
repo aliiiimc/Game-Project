@@ -13,16 +13,16 @@ MonoBehaviour:
   m_Name: Hospital
   m_EditorClassIdentifier: Assembly-CSharp::HospitalCardData
   cardName: Hospital
-  cost: 0
+  cost: 4
   handDeckSprite: {fileID: -8268236786426009918, guid: 43d2d67d1c7123744a2fe5317a4c529a, type: 3}
-  description: 
+  description: Heals nearby allied units at the start of your turn.
   validatorId: target.rules.reusable
-  effectId: 
+  effectId: effect.summon
   manifestedSprite: {fileID: 21300000, guid: b2cb923982d74ef3b0df7c9a0eb04dcc, type: 3}
   category: 0
   structureHp:
-    hasValue: 0
-    value: 0
+    hasValue: 1
+    value: 8
   structureDamage:
     hasValue: 0
     value: 0
@@ -46,5 +46,5 @@ MonoBehaviour:
   worldEffectMovementCapacity:
     hasValue: 0
     value: 0
-  healAmount: 1
+  healAmount: 2
   triggerRange: 1

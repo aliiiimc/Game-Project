@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Revival
   m_EditorClassIdentifier: Assembly-CSharp::SpellCardData
   cardName: Revival
-  cost: 0
+  cost: 5
   handDeckSprite: {fileID: 1524005206587388999, guid: 20f000945a348074ab00840f27471d1f, type: 3}
   description: Lets you choose one recently defeated character and place it immediately on the board.
   validatorId: target.rules.reusable

@@ -13,17 +13,17 @@ MonoBehaviour:
   m_Name: Anti-air tower
   m_EditorClassIdentifier: Assembly-CSharp::AntiAirTowerCardData
   cardName: Anti-Air Tower
-  cost: 0
+  cost: 5
   handDeckSprite: {fileID: -6612694460022668271, guid: 3d0f9f65645fac841b450c7191713719, type: 3}
-  description: 
+  description: Automatically shoots flying enemy units in range at the start of your turn.
   validatorId: target.rules.reusable
-  effectId: 
+  effectId: effect.summon
   specialCardId: world.anti_air_tower
   manifestedSprite: {fileID: 21300000, guid: 484aeaf7df9b480cb49b31b412850883, type: 3}
   category: 0
   structureHp:
-    hasValue: 0
-    value: 0
+    hasValue: 1
+    value: 7
   structureDamage:
     hasValue: 1
     value: 4

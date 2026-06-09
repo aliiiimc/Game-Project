@@ -13,17 +13,17 @@ MonoBehaviour:
   m_Name: Watch tower
   m_EditorClassIdentifier: Assembly-CSharp::WatchTowerCardData
   cardName: Watch Tower
-  cost: 0
+  cost: 4
   handDeckSprite: {fileID: -9044012078644547418, guid: 0db5b2f01fb2cd943b9f2bab729360b6, type: 3}
-  description: 
+  description: Automatically shoots enemy units in range at the start of your turn.
   validatorId: target.rules.reusable
-  effectId: 
+  effectId: effect.summon
   specialCardId: world.watch_tower
   manifestedSprite: {fileID: 21300000, guid: 413c6ade34a942658e43ac29a1b67b2e, type: 3}
   category: 0
   structureHp:
-    hasValue: 0
-    value: 0
+    hasValue: 1
+    value: 7
   structureDamage:
     hasValue: 1
     value: 4

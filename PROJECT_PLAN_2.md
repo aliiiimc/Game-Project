@@ -38,16 +38,13 @@ New buy/economy directive:
 
 ## Abdo - Hex Board and Combat
 
-- Finish board mechanics for unfinished World Effects.
-  - `Wall`: block movement and/or attacks according to the final rule.
-  - `Watch tower`: attack or damage enemy units in range.
-  - `Hospital`: heal nearby allied units.
-  - `Fog`: apply the movement/visibility penalty rule.
-  - `Anti-air tower`: counter flying units.
+- Board effects now active in v1.
+  - `Wall`, `Watch tower`, `Hospital`, and `Anti-air tower` are now implemented and in the active card pool.
+  - `Fog` is intentionally excluded from v1.
 
 - Finish flying and anti-air combat rules.
-  - `Dragon` needs board/combat behavior for flying.
-  - Melee units such as Knight/Spearman should not hit flying units if that remains the final rule.
+  - `Dragon` now has flying behavior; keep the combat edge cases under test.
+  - Verify whether melee units such as Knight/Spearman should continue to miss flying units in the final rule set.
   - Ranged/projectile or anti-air sources should be able to hit flying units.
 
 - Finish structure combat behavior.
@@ -80,24 +77,18 @@ New buy/economy directive:
 
 ## Fatine - Card System, Card Data, and Effects
 
-- Complete unfinished Character card data.
-  - `Spearman`, `Priest`, `Dragon`, and `Engineer` still have `maxHp: 0` and/or `attackDamage: 0`.
-  - Several Character cards still have `cost: 0`; keep only the cards that are intentionally free.
-  - Assign meaningful costs so the tiered random buy pools are balanced.
+- Character cards are now in the active pool with real stats.
+  - Keep tuning costs and combat values only if playtests show a balance problem.
 
-- Complete unfinished Spell cards.
-  - `Freeze`: needs real effect mapping, power/duration, and movement-lock behavior.
-  - `Lightning strike`: needs real damage value and effect mapping.
-  - `Revival`: needs revive behavior or removal from v1 scope.
-  - `Sabotage`: needs building-disable behavior or removal from v1 scope.
-  - `Tax collection`: needs field/resource-steal behavior or removal from v1 scope.
+- Spell cards are now implemented in v1.
+  - `Freeze`, `Lightning strike`, `Revival`, `Sabotage`, and `Tax collection` are now active cards with working effect paths.
 
-- Complete unfinished World Effect card data and effect mapping.
-  - `Wall`, `Watch tower`, `Hospital`, `Fog`, and `Anti-air tower` currently exist as assets but still need real gameplay values/effects.
-  - Any World Effect with no real v1 behavior should be removed from the active random pool until implemented.
+- World Effect cards are now implemented in v1.
+  - `Wall`, `Watch tower`, `Hospital`, and `Anti-air tower` now have real gameplay values/effects.
+  - `Fog` is not part of the active random pool.
 
 - Clean the random card library for v1.
-  - `MainCardLibrary.asset` should only include cards that are playable with real stats/effects.
+  - `MainCardLibrary.asset` now includes only playable cards for the current v1 set.
   - Random buy should not give placeholder cards with zero stats or missing effects.
   - Each active buy tier should contain enough valid cards to make random buying feel fair.
 
@@ -112,6 +103,7 @@ New buy/economy directive:
 - Player can complete full turns with the final flow.
 - Computer can complete turns without breaking the match.
 - Random buying only gives usable v1 cards from the chosen cost tier.
+- Fog is not present in the active random pool.
 - Game ends when a Fort reaches 0 HP.
 - Game Over screen appears with the winner.
 - Restart starts a clean new match.

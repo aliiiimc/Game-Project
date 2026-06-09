@@ -2,6 +2,10 @@ using UnityEngine;
 
 public class Unit : MonoBehaviour
 {
+    private static readonly Color PlayerFullHealthColor = Color.white;
+    private static readonly Color EnemyFullHealthColor = new Color(1f, 0.55f, 0.58f);
+    private static readonly Color DamagedTintColor = new Color(1f, 0.35f, 0.35f);
+
     public int moveRange = 2;
     public int attackRange = 1;
     public int health = 10;
@@ -92,7 +96,10 @@ public class Unit : MonoBehaviour
         if (health <= 0)
         {
             Die();
+            return;
         }
+
+        RefreshVisualState();
     }
 
     public void ApplyHeal(int amount)
@@ -103,6 +110,7 @@ public class Unit : MonoBehaviour
         {
             runtimeCard.ApplyHeal(safeAmount);
             SyncStatsFromRuntimeCard();
+            RefreshVisualState();
             return;
         }
 
@@ -110,6 +118,7 @@ public class Unit : MonoBehaviour
         health = maxHp > 0
             ? Mathf.Min(maxHp, health + safeAmount)
             : health + safeAmount;
+        RefreshVisualState();
     }
 
     public void ModifyAttack(int delta)
@@ -159,6 +168,8 @@ public class Unit : MonoBehaviour
             moveRange = runtimeCard.CurrentMovementCapacity.Value;
             movementSpentThisTurn = Mathf.Min(movementSpentThisTurn, GetEffectiveMoveRange());
         }
+
+        RefreshVisualState();
     }
 
     public int GetEffectiveMoveRange()
@@ -231,11 +242,7 @@ public class Unit : MonoBehaviour
             transform.position = tile.transform.position;
         }
 
-        SpriteRenderer sr = GetComponent<SpriteRenderer>();
-        if (owner == "player")
-            sr.color = Color.white;
-        else
-            sr.color = new Color(1f, 0.55f, 0.58f);
+        RefreshVisualState();
     }
 
     public void Die()
@@ -249,5 +256,25 @@ public class Unit : MonoBehaviour
             currentTile = null;
         }
         Destroy(gameObject);
+    }
+
+    private void RefreshVisualState()
+    {
+        SpriteRenderer sr = GetComponent<SpriteRenderer>();
+        if (sr == null)
+        {
+            return;
+        }
+
+        Color ownerColor = owner == "player" ? PlayerFullHealthColor : EnemyFullHealthColor;
+        int maxHp = sourceCharacterCardData != null ? Mathf.Max(0, sourceCharacterCardData.maxHp) : 0;
+        if (maxHp <= 0)
+        {
+            sr.color = ownerColor;
+            return;
+        }
+
+        float hpRatio = Mathf.Clamp01(health / (float)maxHp);
+        sr.color = Color.Lerp(DamagedTintColor, ownerColor, hpRatio);
     }
 }

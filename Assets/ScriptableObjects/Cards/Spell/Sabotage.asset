@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Sabotage
   m_EditorClassIdentifier: Assembly-CSharp::SpellCardData
   cardName: Sabotage
-  cost: 0
+  cost: 4
   handDeckSprite: {fileID: 8187653537258171138, guid: 1045d2787b8ec0c48b8418b5ece5636e, type: 3}
   description: Disables an enemy building's special work for a limited number of turns.
   validatorId: target.rules.reusable

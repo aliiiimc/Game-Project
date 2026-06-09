@@ -15,17 +15,9 @@ public class Dragon : SpecialCardScriptBase
             return 0;
         }
 
-        int bonusAttackRange = 2;
-        if (unitCardData is DragonCardData dragonCardData)
-        {
-            bonusAttackRange = UnityEngine.Mathf.Max(0, dragonCardData.bonusAttackRange);
-        }
-
-        int baseAttackRange = unitCardData != null
+        return unitCardData != null
             ? UnityEngine.Mathf.Max(0, unitCardData.attackRange)
             : (unit != null ? UnityEngine.Mathf.Max(0, unit.attackRange) : 0);
-
-        return baseAttackRange + bonusAttackRange;
     }
 
     public override bool CanTarget(Unit attacker, CharacterCardData attackerCardData, HexTile tile, string activeOwner)

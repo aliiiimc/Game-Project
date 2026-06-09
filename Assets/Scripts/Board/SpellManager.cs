@@ -407,7 +407,7 @@ public sealed class SpellManager : MonoBehaviour
         }
 
         spell.MarkResolved();
-        NotifySpellResolved(spell);
+        NotifySpellResolved(spell, result);
 
         if (spell.remainingDurationTurns > 0)
         {
@@ -517,7 +517,7 @@ public sealed class SpellManager : MonoBehaviour
         return null;
     }
 
-    private void NotifySpellResolved(Spell spell)
+    private void NotifySpellResolved(Spell spell, CardEffectResult result)
     {
         if (spell == null || spell.sourceCard == null || spell.sourceCard.SourceCard == null)
         {
@@ -530,7 +530,56 @@ public sealed class SpellManager : MonoBehaviour
             return;
         }
 
-        BroadcastSpellAnnouncement($"{spell.sourceCard.SourceCard.DisplayName} played on {targetName}");
+        string message = $"{spell.sourceCard.SourceCard.DisplayName} played on {targetName}";
+
+        if (result.DamageDealt > 0 || result.HealApplied > 0)
+        {
+            int? currentHp = null;
+            if (spell.target.targetCard != null)
+            {
+                if (spell.target.targetCard.CurrentHp.HasValue)
+                {
+                    currentHp = spell.target.targetCard.CurrentHp.Value;
+                }
+                
+                // If the target is dead, CurrentHp might be null, but we can check if it was destroyed
+                if (!currentHp.HasValue && result.DamageDealt > 0)
+                {
+                    currentHp = 0;
+                }
+            }
+            else if (spell.target.type == CardTargetType.AllyFort || spell.target.type == CardTargetType.EnemyFort)
+            {
+                var gm = FindFirstObjectByType<GameManager>();
+                if (gm != null)
+                {
+                    if (gm.player1 != null && (spell.target.targetPlayerId == "player" || spell.target.targetPlayerId == gm.player1.playerName))
+                    {
+                        currentHp = gm.player1.fortHp;
+                    }
+                    else if (gm.player2 != null && (spell.target.targetPlayerId == "enemy" || spell.target.targetPlayerId == gm.player2.playerName))
+                    {
+                        currentHp = gm.player2.fortHp;
+                    }
+                }
+            }
+
+            if (result.DamageDealt > 0)
+            {
+                message += $" (-{result.DamageDealt} HP)";
+            }
+            else if (result.HealApplied > 0)
+            {
+                message += $" (+{result.HealApplied} HP)";
+            }
+
+            if (currentHp.HasValue)
+            {
+                message += $" [HP: {currentHp.Value}]";
+            }
+        }
+
+        BroadcastSpellAnnouncement(message);
     }
 
     private void NotifySpellExpired(Spell spell)

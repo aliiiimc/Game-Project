@@ -156,7 +156,7 @@ public sealed class RevivalManager : MonoBehaviour
         ClearTemporaryCards();
         hudManager?.ClearFeedback();
         gameManager?.RefreshHUD();
-        hudManager?.ShowInfo($"{revivedCharacter?.DisplayName ?? "Character"} revived and placed.");
+        hudManager?.ShowSpellAnnouncement($"Revival cast: {revivedCharacter?.DisplayName ?? "Character"} revived!");
         pendingRevivedCard = null;
         pendingActingPlayerKey = string.Empty;
         pendingSpellCard = null;

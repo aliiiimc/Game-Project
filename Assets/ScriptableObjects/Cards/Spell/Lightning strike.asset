@@ -20,7 +20,7 @@ MonoBehaviour:
   effectId: effect.damage
   specialCardId: spell.lightning_strike
   effectType: 2
-  effectPower: 3
+  effectPower: 10
   effectDurationTurns: 0
   spellMovementCapacity:
     hasValue: 0

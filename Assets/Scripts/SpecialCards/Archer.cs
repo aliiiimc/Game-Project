@@ -12,17 +12,9 @@ public class Archer : SpecialCardScriptBase
             return 0;
         }
 
-        int bonusAttackRange = 2;
-        if (unitCardData is ArcherCardData archerCardData)
-        {
-            bonusAttackRange = UnityEngine.Mathf.Max(0, archerCardData.bonusAttackRange);
-        }
-
-        int baseAttackRange = unitCardData != null
+        return unitCardData != null
             ? UnityEngine.Mathf.Max(0, unitCardData.attackRange)
             : (unit != null ? UnityEngine.Mathf.Max(0, unit.attackRange) : 0);
-
-        return baseAttackRange + bonusAttackRange;
     }
 
     public static bool ShouldPlayProjectile(CharacterCardData unitCardData)

@@ -17,8 +17,8 @@ public class Unit : MonoBehaviour
     public bool hasAttackedThisTurn;
     public int movementSpentThisTurn;
     public CharacterCardData sourceCharacterCardData;
-    public int movementRangeMultiplier = 1;
-    public int movementRangeMultiplierTurnsRemaining;
+    public int movementRangeBonus;
+    public int movementRangeBonusTurnsRemaining;
     public int frozenTurnsRemaining;
 
     private CardRuntimeState runtimeCard;
@@ -40,10 +40,9 @@ public class Unit : MonoBehaviour
     }
 
 
-    // Ali: a unit can only attack if it has not attacked yet and its summon/readiness rule allows it.
     public bool CanAttack()
     {
-        return isReadyToAttack && !hasAttackedThisTurn && !HasExhaustedMovementThisTurn();
+        return !IsFrozen && isReadyToAttack && !hasAttackedThisTurn && !HasExhaustedMovementThisTurn();
     }
 
     public int GetRemainingMovement()
@@ -92,13 +91,18 @@ public class Unit : MonoBehaviour
         {
             health = Mathf.Max(0, health - safeAmount);
         }
+        
+        string unitName = sourceCharacterCardData != null ? sourceCharacterCardData.DisplayName : "Unit";
+        var hud = FindFirstObjectByType<FortGame.UI.HUDManager>();
 
         if (health <= 0)
         {
+            hud?.ShowSpellAnnouncement($"{unitName} took {safeAmount} damage and was destroyed! [HP: 0]");
             Die();
             return;
         }
 
+        hud?.ShowSpellAnnouncement($"{unitName} took {safeAmount} damage. [HP: {health}]");
         RefreshVisualState();
     }
 
@@ -110,6 +114,10 @@ public class Unit : MonoBehaviour
         {
             runtimeCard.ApplyHeal(safeAmount);
             SyncStatsFromRuntimeCard();
+            
+            string name = sourceCharacterCardData != null ? sourceCharacterCardData.DisplayName : "Unit";
+            FindFirstObjectByType<FortGame.UI.HUDManager>()?.ShowSpellAnnouncement($"{name} was healed for {safeAmount}. [HP: {health}]");
+            
             RefreshVisualState();
             return;
         }
@@ -118,6 +126,10 @@ public class Unit : MonoBehaviour
         health = maxHp > 0
             ? Mathf.Min(maxHp, health + safeAmount)
             : health + safeAmount;
+            
+        string unitName = sourceCharacterCardData != null ? sourceCharacterCardData.DisplayName : "Unit";
+        FindFirstObjectByType<FortGame.UI.HUDManager>()?.ShowSpellAnnouncement($"{unitName} was healed for {safeAmount}. [HP: {health}]");
+            
         RefreshVisualState();
     }
 
@@ -174,20 +186,19 @@ public class Unit : MonoBehaviour
 
     public int GetEffectiveMoveRange()
     {
-        int multiplier = movementRangeMultiplierTurnsRemaining > 0
-            ? Mathf.Max(1, movementRangeMultiplier)
-            : 1;
+        int bonus = movementRangeBonusTurnsRemaining > 0
+            ? movementRangeBonus
+            : 0;
 
-        return Mathf.Max(0, moveRange * multiplier);
+        return Mathf.Max(0, moveRange + bonus);
     }
 
-    public void ApplyMovementRangeMultiplier(int multiplier, int turns)
+    public void ApplyMovementRangeBonus(int bonus, int turns)
     {
-        int safeMultiplier = Mathf.Max(1, multiplier);
         int safeTurns = Mathf.Max(1, turns);
 
-        movementRangeMultiplier = safeMultiplier;
-        movementRangeMultiplierTurnsRemaining = safeTurns;
+        movementRangeBonus = bonus;
+        movementRangeBonusTurnsRemaining = safeTurns;
         movementSpentThisTurn = Mathf.Min(movementSpentThisTurn, GetEffectiveMoveRange());
     }
 
@@ -204,15 +215,15 @@ public class Unit : MonoBehaviour
             frozenTurnsRemaining = Mathf.Max(0, frozenTurnsRemaining - 1);
         }
 
-        if (movementRangeMultiplierTurnsRemaining <= 0)
+        if (movementRangeBonusTurnsRemaining <= 0)
         {
             return;
         }
 
-        movementRangeMultiplierTurnsRemaining = Mathf.Max(0, movementRangeMultiplierTurnsRemaining - 1);
-        if (movementRangeMultiplierTurnsRemaining <= 0)
+        movementRangeBonusTurnsRemaining = Mathf.Max(0, movementRangeBonusTurnsRemaining - 1);
+        if (movementRangeBonusTurnsRemaining <= 0)
         {
-            movementRangeMultiplier = 1;
+            movementRangeBonus = 0;
         }
 
         movementSpentThisTurn = Mathf.Min(movementSpentThisTurn, GetEffectiveMoveRange());

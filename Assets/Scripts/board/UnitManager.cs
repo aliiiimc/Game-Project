@@ -109,7 +109,7 @@ public class UnitManager : MonoBehaviour
         // Attack range boundary — show all tiles within attack range in a distinct color first.
         // Movement and enemy target highlights will overwrite where they overlap.
         int effectiveAttackRange = GetAttackRangeForUnit(selectedUnit);
-        if (effectiveAttackRange > 0 && selectedUnit.CanAttack())
+        if (effectiveAttackRange > 0)
         {
             EnsureReferences();
             if (grid != null)

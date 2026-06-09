@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Dragon
   m_EditorClassIdentifier: Assembly-CSharp::DragonCardData
   cardName: Dragon
-  cost: 7
+  cost: 9
   handDeckSprite: {fileID: 8127724391895405021, guid: b51fc4777de8ead4394806a62d3209dc, type: 3}
   description: 
   validatorId: target.rules.reusable
@@ -21,7 +21,7 @@ MonoBehaviour:
   specialCardId: character.dragon
   manifestedSprite: {fileID: -1387163648491893939, guid: 93ef6eaa9efd0184d9bbce4d2c980906, type: 3}
   maxHp: 85
-  attackDamage: 24
+  attackDamage: 12
   attackRange: 1
   attackType: 0
   attackTarget: 2

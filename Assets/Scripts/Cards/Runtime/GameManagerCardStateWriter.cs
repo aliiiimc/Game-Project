@@ -199,6 +199,8 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
         if (boardUnit != null)
         {
             boardUnit.ApplyDamage(safeAmount);
+            int currentHp = boardUnit.RuntimeCard != null && boardUnit.RuntimeCard.CurrentHp.HasValue ? boardUnit.RuntimeCard.CurrentHp.Value : 0;
+            NotifyHUD($"{card.SourceCard.DisplayName} took {safeAmount} damage. [HP: {currentHp}]");
             LogTransaction($"ApplyDamage: {card.SourceCard.DisplayName} realUnit amount={safeAmount}.");
             return;
         }
@@ -228,15 +230,19 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
                     worldEffectManager?.Remove(structureTile);
                 }
 
+                NotifyHUD($"{card.SourceCard.DisplayName} took {safeAmount} damage and was destroyed! [HP: 0]");
                 LogTransaction($"ApplyDamage: {card.SourceCard.DisplayName} structure destroyed by {safeAmount} damage.");
                 return;
             }
 
+            NotifyHUD($"{card.SourceCard.DisplayName} took {safeAmount} damage. [HP: {boardWorldEffect.health}]");
             LogTransaction($"ApplyDamage: {card.SourceCard.DisplayName} realStructure amount={safeAmount}, hp={boardWorldEffect.health}.");
             return;
         }
 
         card.ApplyDamage(safeAmount);
+        int genericHp = card.CurrentHp.HasValue ? card.CurrentHp.Value : 0;
+        NotifyHUD($"{card.SourceCard.DisplayName} took {safeAmount} damage. [HP: {genericHp}]");
         LogTransaction($"ApplyDamage: {card.SourceCard.DisplayName} amount={safeAmount}.");
     }
 
@@ -252,11 +258,15 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
         if (boardUnit != null)
         {
             boardUnit.ApplyHeal(safeAmount);
+            int currentHp = boardUnit.RuntimeCard != null && boardUnit.RuntimeCard.CurrentHp.HasValue ? boardUnit.RuntimeCard.CurrentHp.Value : 0;
+            NotifyHUD($"{card.SourceCard.DisplayName} was healed for {safeAmount}. [HP: {currentHp}]");
             LogTransaction($"ApplyHeal: {card.SourceCard.DisplayName} realUnit amount={safeAmount}.");
             return;
         }
 
         card.ApplyHeal(safeAmount);
+        int genericHp = card.CurrentHp.HasValue ? card.CurrentHp.Value : 0;
+        NotifyHUD($"{card.SourceCard.DisplayName} was healed for {safeAmount}. [HP: {genericHp}]");
         LogTransaction($"ApplyHeal: {card.SourceCard.DisplayName} amount={safeAmount}.");
     }
 
@@ -278,6 +288,9 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
         if (playerId == player1Key || (gameManager.player1 != null && playerId == gameManager.player1.playerName))
         {
             gameManager.DamagePlayer1Fort(safeAmount);
+            string pName = gameManager.player1 != null ? gameManager.player1.playerName : "Player 1";
+            int fHp = gameManager.player1 != null ? gameManager.player1.fortHp : 0;
+            NotifyHUD($"{pName}'s Fort took {safeAmount} damage. [HP: {fHp}]");
             LogTransaction($"ApplyFortDamage: player='{playerId}' amount={safeAmount}.");
             return;
         }
@@ -285,6 +298,9 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
         if (playerId == player2Key || (gameManager.player2 != null && playerId == gameManager.player2.playerName))
         {
             gameManager.DamagePlayer2Fort(safeAmount);
+            string pName = gameManager.player2 != null ? gameManager.player2.playerName : "Player 2";
+            int fHp = gameManager.player2 != null ? gameManager.player2.fortHp : 0;
+            NotifyHUD($"{pName}'s Fort took {safeAmount} damage. [HP: {fHp}]");
             LogTransaction($"ApplyFortDamage: player='{playerId}' amount={safeAmount}.");
         }
     }
@@ -306,6 +322,9 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
         if (playerId == player1Key || (gameManager.player1 != null && playerId == gameManager.player1.playerName))
         {
             gameManager.HealPlayer1Fort(safeAmount);
+            string pName = gameManager.player1 != null ? gameManager.player1.playerName : "Player 1";
+            int fHp = gameManager.player1 != null ? gameManager.player1.fortHp : 0;
+            NotifyHUD($"{pName}'s Fort was healed for {safeAmount}. [HP: {fHp}]");
             LogTransaction($"ApplyFortHeal: player='{playerId}' amount={safeAmount}.");
             return;
         }
@@ -313,6 +332,9 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
         if (playerId == player2Key || (gameManager.player2 != null && playerId == gameManager.player2.playerName))
         {
             gameManager.HealPlayer2Fort(safeAmount);
+            string pName = gameManager.player2 != null ? gameManager.player2.playerName : "Player 2";
+            int fHp = gameManager.player2 != null ? gameManager.player2.fortHp : 0;
+            NotifyHUD($"{pName}'s Fort was healed for {safeAmount}. [HP: {fHp}]");
             LogTransaction($"ApplyFortHeal: player='{playerId}' amount={safeAmount}.");
         }
     }
@@ -585,5 +607,14 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
         WorldEffectManager manager = managerObject.AddComponent<WorldEffectManager>();
         Debug.LogWarning("[GameManagerCardStateWriter] WorldEffectManager was missing in scene. Created runtime fallback.");
         return manager;
+    }
+
+    private void NotifyHUD(string message)
+    {
+        var hud = FindFirstObjectByType<FortGame.UI.HUDManager>();
+        if (hud != null)
+        {
+            hud.ShowSpellAnnouncement(message);
+        }
     }
 }

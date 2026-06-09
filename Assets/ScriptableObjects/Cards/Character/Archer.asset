@@ -21,7 +21,7 @@ MonoBehaviour:
   manifestedSprite: {fileID: 21300000, guid: 2b0404a658c6ca043b32cc29819fce11, type: 3}
   maxHp: 32
   attackDamage: 10
-  attackRange: 1
+  attackRange: 3
   attackType: 1
   attackTarget: 2
   movementType: 0
@@ -30,7 +30,6 @@ MonoBehaviour:
     hasValue: 1
     value: 2
   canColonizeEnemyWorldEffects: 0
-  bonusAttackRange: 2
   projectileVisuals:
     projectilePrefab: {fileID: 734101, guid: 1d9835c6254b42cc873bdd173e77e128, type: 3}
     impactPrefab: {fileID: 0}

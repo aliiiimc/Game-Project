@@ -5,7 +5,7 @@ using UnityEngine;
 public class GameConfig : ScriptableObject
 {
     public int startingMoney = 4;
-    public int startingFortHp = 45;
+    public int startingFortHp = 60;
     public int startingHandSize = 4;
     public int maxHandSize = 7;
     public int moneyPerTurn = 3;

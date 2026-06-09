@@ -18,6 +18,7 @@ MonoBehaviour:
   description: 
   validatorId: target.rules.reusable
   effectId: 
+  specialCardId: 
   manifestedSprite: {fileID: -72050608465181975, guid: 989cc12ac30bd474b979643a76686f52, type: 3}
   maxHp: 38
   attackDamage: 14

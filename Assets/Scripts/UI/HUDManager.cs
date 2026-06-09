@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement; //Ali : ajouté parce que le bouton Restart va recharger la scène actuelle avec: SceneManager.LoadScene(...)
@@ -37,6 +38,7 @@ namespace FortGame.UI
         public TextMeshProUGUI currentPlayerText;
 
         [Header("Spell Announcement")]
+        public RectTransform upperPanelTransform;
         public TextMeshProUGUI spellAnnouncementText;
         public float spellAnnouncementDuration = 2.5f;
 
@@ -46,16 +48,55 @@ namespace FortGame.UI
         public GameObject gameplayControlsRoot; // Ali : Pour cacher boutons quand gameover 
 
         private float _errorMessageTimer = 0f;
+        private Coroutine _spellBannerCoroutine = null;
+        private Vector2 _upperPanelVisiblePos;
+        private Vector2 _upperPanelHiddenPos;
         private float _spellAnnouncementTimer = 0f;
 
         private void Awake()
         {
             AutoBindMissingReferences();
+
+            if (upperPanelTransform != null && spellAnnouncementText == null)
+            {
+                spellAnnouncementText = upperPanelTransform.GetComponentInChildren<TextMeshProUGUI>();
+                
+                if (spellAnnouncementText == null)
+                {
+                    GameObject textObj = new GameObject("BannerText");
+                    textObj.transform.SetParent(upperPanelTransform, false);
+                    
+                    RectTransform rect = textObj.AddComponent<RectTransform>();
+                    rect.anchorMin = Vector2.zero;
+                    rect.anchorMax = Vector2.one;
+                    rect.sizeDelta = Vector2.zero;
+                    rect.anchoredPosition = Vector2.zero;
+                    
+                    spellAnnouncementText = textObj.AddComponent<TextMeshProUGUI>();
+                    spellAnnouncementText.alignment = TextAlignmentOptions.Center;
+                    spellAnnouncementText.color = Color.white;
+                    spellAnnouncementText.text = string.Empty;
+                    spellAnnouncementText.enableAutoSizing = true;
+                    spellAnnouncementText.fontSizeMin = 18f;
+                    spellAnnouncementText.fontSizeMax = 40f;
+                    
+                    if (currentPlayerText != null)
+                    {
+                        spellAnnouncementText.font = currentPlayerText.font;
+                        spellAnnouncementText.fontSharedMaterial = currentPlayerText.fontSharedMaterial;
+                    }
+                }
+            }
+
             EnsureSpellAnnouncementBinding();
             SetGameOverPanelVisible(false); // Au lancement de la scène, la partie n’est pas finie. Donc le panel Game Over doit être caché dès le début.
 
-
-
+            if (upperPanelTransform != null)
+            {
+                _upperPanelVisiblePos = upperPanelTransform.anchoredPosition;
+                _upperPanelHiddenPos = new Vector2(_upperPanelVisiblePos.x, _upperPanelVisiblePos.y + upperPanelTransform.rect.height + 50f);
+                upperPanelTransform.anchoredPosition = _upperPanelHiddenPos;
+            }
         }
 
         private void Update()
@@ -182,6 +223,26 @@ namespace FortGame.UI
             if (spellAnnouncementText != null)
             {
                 spellAnnouncementText.text = message ?? string.Empty;
+            }
+
+            if (upperPanelTransform != null)
+            {
+                if (_spellBannerCoroutine != null)
+                {
+                    StopCoroutine(_spellBannerCoroutine);
+                }
+
+                if (!string.IsNullOrWhiteSpace(message))
+                {
+                    _spellBannerCoroutine = StartCoroutine(AnimateUpperPanel());
+                }
+                else
+                {
+                    upperPanelTransform.anchoredPosition = _upperPanelHiddenPos;
+                }
+            }
+            else
+            {
                 _spellAnnouncementTimer = string.IsNullOrWhiteSpace(message) ? 0f : spellAnnouncementDuration;
             }
 
@@ -189,6 +250,44 @@ namespace FortGame.UI
             {
                 Debug.Log($"[HUDManager] Spell: {message}");
             }
+        }
+
+        private IEnumerator AnimateUpperPanel()
+        {
+            float slideDuration = 0.3f;
+            float elapsedTime = 0f;
+
+            // Slide down
+            Vector2 startPos = upperPanelTransform.anchoredPosition;
+            while (elapsedTime < slideDuration)
+            {
+                elapsedTime += Time.deltaTime;
+                float t = Mathf.SmoothStep(0f, 1f, elapsedTime / slideDuration);
+                upperPanelTransform.anchoredPosition = Vector2.Lerp(startPos, _upperPanelVisiblePos, t);
+                yield return null;
+            }
+            upperPanelTransform.anchoredPosition = _upperPanelVisiblePos;
+
+            // Wait
+            yield return new WaitForSeconds(spellAnnouncementDuration);
+
+            // Slide up
+            elapsedTime = 0f;
+            startPos = upperPanelTransform.anchoredPosition;
+            while (elapsedTime < slideDuration)
+            {
+                elapsedTime += Time.deltaTime;
+                float t = Mathf.SmoothStep(0f, 1f, elapsedTime / slideDuration);
+                upperPanelTransform.anchoredPosition = Vector2.Lerp(startPos, _upperPanelHiddenPos, t);
+                yield return null;
+            }
+            upperPanelTransform.anchoredPosition = _upperPanelHiddenPos;
+
+            if (spellAnnouncementText != null)
+            {
+                spellAnnouncementText.text = string.Empty;
+            }
+            _spellBannerCoroutine = null;
         }
 
         public void ClearFeedback()

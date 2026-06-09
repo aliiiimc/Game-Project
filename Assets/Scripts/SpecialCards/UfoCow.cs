@@ -44,18 +44,6 @@ public class UfoCow : SpecialCardScriptBase
 
         HexTile currentTile = ufoCow.currentTile;
 
-        // EMERGENCY AUTO-FIX:
-        // If the engine failed to mark this specific tile as a field (isFieldTile = false), 
-        // the cow will get stuck forever trying to consume a non-existent HP bar.
-        // We detect this and forcefully repair the tile's data on the fly.
-        if (currentTile.HasWorldEffect() && currentTile.worldEffectOwner != "none" && currentTile.worldEffectOwner != ufoCow.owner)
-        {
-            if (!currentTile.isFieldTile)
-            {
-                currentTile.SetFieldData("UfoCowEmergencyRepair", 4, 1);
-            }
-        }
-
         if (!CanConsumeEnemyField(currentTile, ufoCow.owner))
         {
             return false;
@@ -147,8 +135,7 @@ public class UfoCow : SpecialCardScriptBase
         {
             HexTile tile = allTiles[i];
             
-            // ULTRA-FORGIVING CHECK: Ignore isFieldTile. If it has ANY world effect and it's an enemy's, target it!
-            if (tile.HasWorldEffect() && tile.worldEffectOwner != unit.owner && tile.worldEffectOwner != "none")
+            if (tile.HasWorldEffect() && tile.isFieldTile && tile.worldEffectOwner != unit.owner && tile.worldEffectOwner != "none")
             {
                 validTiles.Add(tile);
             }

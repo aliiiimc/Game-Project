@@ -23,10 +23,10 @@ MonoBehaviour:
   category: 0
   structureHp:
     hasValue: 1
-    value: 7
+    value: 25
   structureDamage:
     hasValue: 1
-    value: 4
+    value: 8
   worldEffectAttackRange:
     hasValue: 1
     value: 2

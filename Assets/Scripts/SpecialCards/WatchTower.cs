@@ -108,13 +108,7 @@ public class WatchTower
             baseRange = Mathf.Max(0, worldEffectCard.worldEffectAttackRange.Value);
         }
 
-        int bonus = 0;
-        if (worldEffectCard is WatchTowerCardData watchTowerData)
-        {
-            bonus = Mathf.Max(0, watchTowerData.bonusAttackRange);
-        }
-
-        return baseRange + bonus;
+        return baseRange;
     }
 
     private static Unit FindUnitOnTile(HexTile tile)

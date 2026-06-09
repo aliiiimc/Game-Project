@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Spearman
   m_EditorClassIdentifier: Assembly-CSharp::CharacterCardData
   cardName: Spearman
-  cost: 2
+  cost: 3
   handDeckSprite: {fileID: 2140098413681247292, guid: e4a6f2847b7db5444995cdcef106821a, type: 3}
   description: 
   validatorId: target.rules.reusable
@@ -22,7 +22,7 @@ MonoBehaviour:
   manifestedSprite: {fileID: 4270412340355224758, guid: 228a5fd8d740e014b80126f22f29ef5f, type: 3}
   maxHp: 42
   attackDamage: 10
-  attackRange: 3
+  attackRange: 2
   attackType: 0
   attackTarget: 0
   movementType: 0

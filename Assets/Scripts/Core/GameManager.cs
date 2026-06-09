@@ -314,8 +314,8 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         player1.maxHandSize = gameConfig.maxHandSize;
         player2.maxHandSize = gameConfig.maxHandSize;
 
-        FillStartingHand(player1, gameConfig.startingHandSize); // ajoute les cartes dans la logique handCards
-        FillStartingHand(player2, gameConfig.startingHandSize);
+        FillStartingHand(player1); // ajoute les cartes dans la logique handCards
+        FillStartingHand(player2);
 
         currentPlayer = player1;
         RefreshCurrentPlayerHandUI(); //Sync cards 
@@ -390,23 +390,40 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
 
 
-    private void FillStartingHand(PlayerState player, int numberOfCards)
+    private void FillStartingHand(PlayerState player)
     {
         if (player == null)
         { return; }
 
-        for (int i = 0; i < numberOfCards; i++)
+        // 2 Character cards
+        for (int i = 0; i < 2; i++)
         {
-            CardRuntimeState card = CreateRandomCardRuntimeState();
-
+            CardRuntimeState card = CreateRandomCardRuntimeStateOfType<CharacterCardData>();
             if (card == null)
             {
-                Debug.Log("Could not create a starting card.");
+                Debug.Log("Could not create a starting character card.");
                 return;
             }
-
             AddCardToHand(player, card);
         }
+
+        // 1 WorldEffect card
+        CardRuntimeState worldEffectCard = CreateRandomCardRuntimeStateOfType<WorldEffectCardData>();
+        if (worldEffectCard == null)
+        {
+            Debug.Log("Could not create a starting world effect card.");
+            return;
+        }
+        AddCardToHand(player, worldEffectCard);
+
+        // 1 Spell card
+        CardRuntimeState spellCard = CreateRandomCardRuntimeStateOfType<SpellCardData>();
+        if (spellCard == null)
+        {
+            Debug.Log("Could not create a starting spell card.");
+            return;
+        }
+        AddCardToHand(player, spellCard);
     }
 
     public void BuyCard()
@@ -707,10 +724,6 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
 
 
-
-
-
-
     private void AddCardToHand(PlayerState player, CardRuntimeState card)
     {
         if (player == null || card == null)
@@ -763,6 +776,45 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         }
 
         return CardFactory.CreateRuntimeState(randomCard);
+    }
+
+    private CardRuntimeState CreateRandomCardRuntimeStateOfType<T>() where T : CardData
+    {
+        CardData randomCard = GetRandomCardFromLibraryByType<T>();
+
+        if (randomCard == null)
+        {
+            return null;
+        }
+
+        return CardFactory.CreateRuntimeState(randomCard);
+    }
+
+    private CardData GetRandomCardFromLibraryByType<T>() where T : CardData
+    {
+        if (cardLibrary == null || cardLibrary.cards == null || cardLibrary.cards.Count == 0)
+        {
+            Debug.Log("Card Library is missing or empty.");
+            return null;
+        }
+
+        List<CardData> matchingCards = new List<CardData>();
+        for (int i = 0; i < cardLibrary.cards.Count; i++)
+        {
+            CardData card = cardLibrary.cards[i];
+            if (card is T)
+            {
+                matchingCards.Add(card);
+            }
+        }
+
+        if (matchingCards.Count == 0)
+        {
+            Debug.Log("No cards of type " + typeof(T).Name + " found in the library.");
+            return null;
+        }
+
+        return matchingCards[Random.Range(0, matchingCards.Count)];
     }
 
     private CardRuntimeState CreateRandomCardRuntimeStateForCost(int selectedCost)
@@ -1062,13 +1114,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
     private List<int> GetBuyMenuCosts()
     {
-        List<int> costs = new List<int>();
-        for (int cost = MinBuyMenuCost; cost <= MaxBuyMenuCost; cost++)
-        {
-            costs.Add(cost);
-        }
-
-        return costs;
+        return GetAvailableBuyCosts(false);
     }
 
     private void PositionBuyCostOptions(RectTransform rootRect, RectTransform buyButtonRect, int optionCount)
@@ -1982,6 +2028,8 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
         targetPlayer.fortHp = Mathf.Max(0, targetPlayer.fortHp - damage);
         Debug.Log(targetPlayer.playerName + " fort HP is now: " + targetPlayer.fortHp);
+        
+        hudManager?.ShowSpellAnnouncement($"{targetPlayer.playerName}'s Fort took {damage} damage. [HP: {targetPlayer.fortHp}]");
 
         CheckGameOver();
         LogStateSummary();
@@ -2003,6 +2051,8 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
         targetPlayer.fortHp += amount;
         Debug.Log(targetPlayer.playerName + " fort HP is now: " + targetPlayer.fortHp);
+        
+        hudManager?.ShowSpellAnnouncement($"{targetPlayer.playerName}'s Fort was healed for {amount}. [HP: {targetPlayer.fortHp}]");
 
         LogStateSummary();
     }

@@ -68,11 +68,6 @@ public class Wall
             {
                 placed = worldEffectManager.TryPlaceFromCard(tile, owner, sourceCard, out _);
             }
-            else if (tile.tileType == "worldEffect")
-            {
-                bool ownershipReady = tile.owner == owner || worldEffectManager.TryColonize(tile, owner);
-                placed = ownershipReady && worldEffectManager.TryReplace(tile, owner, sourceCard, out _);
-            }
 
             if (placed)
             {

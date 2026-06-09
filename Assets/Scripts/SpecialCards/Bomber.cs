@@ -16,14 +16,7 @@ public class Bomber : SpecialCardScriptBase
             return 1;
         }
 
-        int bonusAttackRange = 2;
-        if (unitCardData is BomberCardData bomberData)
-        {
-            bonusAttackRange = Mathf.Max(0, bomberData.bonusAttackRange);
-        }
-
-        int baseAttackRange = unitCardData != null ? Mathf.Max(0, unitCardData.attackRange) : 0;
-        return baseAttackRange + bonusAttackRange;
+        return unitCardData != null ? Mathf.Max(0, unitCardData.attackRange) : 0;
     }
 
     public override AttackType GetAttackType(Unit unit, CharacterCardData unitCardData)

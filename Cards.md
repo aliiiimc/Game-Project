@@ -33,7 +33,7 @@ Visible effect on the board. Placed on tile(s), can have a sprite, zone, or dura
 No visible board object. Applies an instant or temporary effect by modifying stats, resources, or state.
 
 - Revival: revives  character dead from last round
-- 2x Speed: 1 turn doubles tiles, doesn't work on miner.
+- +2 Speed: adds 2 movement capacity, doesn't work on miner.
 - Freeze: enemy unit cannot move for 1 turn
 - Tax Collection: choose field of enemy player and takes away the money generated of the field and gives it to you
 - Sabotage: disables enemy building for 1 turn

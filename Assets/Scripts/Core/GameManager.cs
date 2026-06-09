@@ -50,21 +50,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
     public GameObject endTurnButtonObject;
     public string endTurnButtonObjectName = "End Turn";
 
-    public HandUI handUI; //HandUI gère l’affichage des cartes dans la main
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    public HandUI handUI; //HandUI gère l'affichage des cartes dans la main
 
 
     private void Start()
@@ -87,6 +73,30 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
         SetupGame();
         SetupBuyCostMenu();
+        ResolveActionButtonReferences();
+        RefreshActionButtons();
+    }
+
+    private void ResolveActionButtonReferences()
+    {
+        if (buyButtonObject == null) buyButtonObject = FindGameObjectByName(buyButtonObjectName);
+        if (skipBuyButtonObject == null) skipBuyButtonObject = FindGameObjectByName(skipBuyButtonObjectName);
+        if (confirmBuyWithFullHandButtonObject == null) confirmBuyWithFullHandButtonObject = FindGameObjectByName(confirmBuyWithFullHandButtonObjectName);
+        if (cancelBuyButtonObject == null) cancelBuyButtonObject = FindGameObjectByName(cancelBuyButtonObjectName);
+        if (discardButtonObject == null) discardButtonObject = FindGameObjectByName(discardButtonObjectName);
+        if (endTurnButtonObject == null) endTurnButtonObject = FindGameObjectByName(endTurnButtonObjectName);
+    }
+
+    private GameObject FindGameObjectByName(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return null;
+        GameObject[] all = FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        for (int i = 0; i < all.Length; i++)
+        {
+            if (all[i] != null && all[i].name == name)
+                return all[i];
+        }
+        return null;
     }
 
     private void SetupGame()
@@ -278,6 +288,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
             isBuyDecisionPending = true;
             pendingBuyCost = selectedCost;
             Debug.Log(currentPlayer.playerName + " has a full hand. Confirm buy to buy a " + selectedCost + " cost card and be forced to discard, or cancel.");
+            RefreshActionButtons();
             return;
         }
 
@@ -397,6 +408,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
         selectedCardToDiscard = card;
         Debug.Log("Selected a card to discard.");
+        RefreshActionButtons();
     }
 
 
@@ -502,9 +514,6 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
             handUI.AddCardToHand(currentPlayer.handCards[i]);
         }
     }
-
-
-
 
 
 
@@ -1125,9 +1134,81 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
             + " | P2(Money=" + player2.money + ", Hand=" + player2.handCount + ", Discard=" + player2.discardCount + ", Fort=" + player2.fortHp + ")";
     }
 
+    public void RefreshActionButtons()
+    {
+        if (IsComputerTurn())
+        {
+            SetObjectActive(buyButtonObject, false);
+            SetObjectActive(skipBuyButtonObject, false);
+            SetObjectActive(confirmBuyWithFullHandButtonObject, false);
+            SetObjectActive(cancelBuyButtonObject, false);
+            SetObjectActive(discardButtonObject, false);
+            SetObjectActive(endTurnButtonObject, false);
+            return;
+        }
+
+        bool isBuy = currentPhase == GamePhase.Buy;
+        bool isPlay = currentPhase == GamePhase.Play;
+        bool isPending = isBuyDecisionPending;
+        bool isMustDiscard = mustDiscardAfterBuy;
+
+        if (isBuy && !isPending && !isMustDiscard)
+        {
+            SetObjectActive(buyButtonObject, !hasBoughtThisTurn);
+            SetObjectActive(skipBuyButtonObject, true);
+            SetObjectActive(confirmBuyWithFullHandButtonObject, false);
+            SetObjectActive(cancelBuyButtonObject, false);
+            SetObjectActive(discardButtonObject, true);
+            SetObjectActive(endTurnButtonObject, !hasBoughtThisTurn);
+        }
+        else if (isBuy && isPending && !isMustDiscard)
+        {
+            SetObjectActive(buyButtonObject, false);
+            SetObjectActive(skipBuyButtonObject, false);
+            SetObjectActive(confirmBuyWithFullHandButtonObject, true);
+            SetObjectActive(cancelBuyButtonObject, true);
+            SetObjectActive(discardButtonObject, false);
+            SetObjectActive(endTurnButtonObject, false);
+        }
+        else if (isBuy && isMustDiscard)
+        {
+            bool hasSelected = selectedCardToDiscard != null;
+            SetObjectActive(buyButtonObject, false);
+            SetObjectActive(skipBuyButtonObject, false);
+            SetObjectActive(confirmBuyWithFullHandButtonObject, false);
+            SetObjectActive(cancelBuyButtonObject, false);
+            SetObjectActive(discardButtonObject, hasSelected);
+            SetObjectActive(endTurnButtonObject, false);
+        }
+        else if (isPlay)
+        {
+            SetObjectActive(buyButtonObject, false);
+            SetObjectActive(skipBuyButtonObject, false);
+            SetObjectActive(confirmBuyWithFullHandButtonObject, false);
+            SetObjectActive(cancelBuyButtonObject, false);
+            SetObjectActive(discardButtonObject, false);
+            SetObjectActive(endTurnButtonObject, true);
+        }
+        else
+        {
+            SetObjectActive(buyButtonObject, false);
+            SetObjectActive(skipBuyButtonObject, false);
+            SetObjectActive(confirmBuyWithFullHandButtonObject, false);
+            SetObjectActive(cancelBuyButtonObject, false);
+            SetObjectActive(discardButtonObject, false);
+            SetObjectActive(endTurnButtonObject, false);
+        }
+    }
+
+    private void SetObjectActive(GameObject obj, bool active)
+    {
+        if (obj != null) obj.SetActive(active);
+    }
+
     public void LogStateSummary()
     {
         RefreshHUD();
+        RefreshActionButtons();
 
         Debug.Log(GetStateSummary());
     }
@@ -1440,19 +1521,6 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
             unit.ConsumeTimedEffectsOnOwnerTurnEnd();
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

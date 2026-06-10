@@ -1,0 +1,334 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{titlesec}
+\usepackage{setspace}
+
+\geometry{margin=2.5cm}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=blue
+}
+\setlength{\parskip}{0.55em}
+\setlength{\parindent}{0pt}
+\linespread{1.08}
+
+\graphicspath{{report_figures/}}
+
+\titleformat{\section}{\Large\bfseries}{\thesection.}{0.5em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection.}{0.5em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries}{\thesubsubsection.}{0.5em}{}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \includegraphics[width=0.24\textwidth]{unisa_logo.png}\hfill
+    \includegraphics[width=0.24\textwidth]{ensa_logo.png}
+
+    \vspace{2.5cm}
+
+    {\LARGE \textbf{Fort and Cards Project Report}\par}
+    \vspace{0.4cm}
+    {\Large \textbf{Cards War}\par}
+    \vspace{0.4cm}
+    {\large Turn-Based Strategy Card Game\par}
+
+    \vspace{2cm}
+
+    \begin{tabular}{>{\bfseries}l l}
+    Developed by: & Supervised by: \\
+    Achahoud Fatine & M. Atlas Abdelghafour \\
+    Fikry Mohamed Ali & M. Bekkari Ai ssam \\
+    Ikharrazen Abdelali & M. Charef Ayoub \\
+    Lamjid Rabi a & \\
+    \end{tabular}
+
+    \vfill
+    {\large Academic report\par}
+\end{titlepage}
+
+\pagenumbering{roman}
+\tableofcontents
+\newpage
+
+\section*{Résumé}
+\addcontentsline{toc}{section}{Résumé}
+Cards War est un jeu de stratégie tour par tour développé sous Unity par une équipe de quatre étudiants en génie informatique. Le projet combine un plateau hexagonal, un système de cartes, une économie simple par tour, des unités de combat, des effets instantanés et une intelligence artificielle locale.
+
+L'objectif principal était de produire un jeu jouable, clair et structuré, tout en appliquant les bases de la programmation orientée objet, de la séparation des responsabilités et de l'utilisation de \textit{ScriptableObjects} pour centraliser les données du jeu.
+
+\section*{Abstract}
+\addcontentsline{toc}{section}{Abstract}
+Cards War is a local turn-based strategy card game built in Unity by a four-student team. It combines hex-grid tactics, a card economy, combat units, instant spells, and a local AI opponent.
+
+The project focuses on a playable and organized first Unity/C\# experience. It emphasizes clean data-driven design, a card execution pipeline, and a modular architecture that keeps gameplay rules separate from the user interface.
+
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\section{Introduction}
+Ce rapport présente le projet Cards War, un jeu de stratégie tour par tour centré sur la défense d'un Fort et l'utilisation tactique de cartes. Le projet a été conçu comme une première réalisation complète sous Unity et C\#, avec une volonté de construire un système clair plutôt qu'un prototype purement expérimental.
+
+Le jeu repose sur trois idées simples: un plateau hexagonal, une économie basée sur des ressources par tour, et des cartes qui influencent directement le déroulement de la partie. Cette combinaison donne un gameplay lisible, mais suffisamment riche pour créer des choix stratégiques.
+
+\subsection{Objectif du projet}
+\begin{itemize}[leftmargin=1.2cm]
+    \item Créer un jeu complet et jouable contre l'ordinateur.
+    \item Organiser les règles du jeu de manière lisible et modulaire.
+    \item Utiliser des données séparées du code pour faciliter l'équilibrage.
+    \item Mettre en place une base technique propre pour une future évolution.
+\end{itemize}
+
+\subsection{Périmètre}
+Le rapport reste volontairement centré sur la version actuelle du jeu. Il décrit le concept, les types de cartes, la structure des tours, l'architecture logicielle, l'IA, et la répartition du travail dans l'équipe. Le but n'est pas d'entrer dans un niveau de détail excessif, mais de garder une vue complète et cohérente.
+
+\section{Vue d'ensemble du projet}
+Cards War est un jeu local de stratégie dans lequel chaque joueur protège un Fort situé de son côté du plateau. Le joueur construit progressivement sa main, place des unités, déclenche des effets et cherche à réduire les points de vie du Fort adverse à zéro.
+
+Le jeu a été pensé comme une expérience de combat tactique au tour par tour, avec une dimension de gestion des ressources. Contrairement à un système de pioche automatique classique, le joueur dépense de l'argent pour acheter une carte en fonction d'un coût choisi, ce qui introduit un choix économique important à chaque tour.
+
+\subsection{Structure générale}
+La partie suit une boucle simple:
+\begin{enumerate}[leftmargin=1.2cm]
+    \item Phase d'économie.
+    \item Phase d'achat ou de défausse.
+    \item Phase de jeu.
+    \item Fin de tour et vérification de la victoire.
+\end{enumerate}
+
+\subsection{Expérience de jeu}
+Le jeu mélange trois types d'actions:
+\begin{itemize}[leftmargin=1.2cm]
+    \item déployer des unités sur le plateau,
+    \item poser des effets de terrain ou des structures,
+    \item lancer des sorts instantanés.
+\end{itemize}
+
+\section{Concept de jeu}
+Le plateau est composé d'hexagones. Chaque joueur commence avec un Fort placé sur sa moitié du terrain et une main de départ de cinq cartes. La composition de départ est volontairement équilibrée: deux cartes World Effect, deux cartes Character et une carte Spell.
+
+\subsection{Phases de tour}
+\textbf{Income Phase.} Le joueur reçoit un revenu garanti. Cette règle donne un rythme stable à la partie et évite les tours vides.
+
+\textbf{Buy / Discard Phase.} Le joueur peut acheter une carte d'un coût donné ou se débarrasser d'une carte inutilisée pour récupérer une petite somme. L'achat est volontairement limité à une carte par tour.
+
+\textbf{Play Phase.} Le joueur utilise ses cartes pour placer des unités, construire des éléments de terrain ou appliquer des effets immédiats. Les unités peuvent aussi se déplacer et attaquer.
+
+\textbf{End Phase.} Le moteur vérifie l'état du Fort. Si aucun Fort n'a été détruit, le tour passe à l'autre joueur.
+
+\subsection{Condition de victoire}
+Une partie se termine lorsqu'un Fort atteint 0 HP. Le joueur adverse est alors déclaré gagnant, et un écran de fin permet de recommencer la partie.
+
+\section{Système de cartes}
+Le cœur du gameplay repose sur trois familles de cartes. Elles n'ont pas le même rôle et n'obéissent pas aux mêmes contraintes de placement.
+
+\subsection{Cartes Character}
+Les cartes Character servent à invoquer des unités de combat sur le plateau. Elles peuvent attaquer des unités ennemies, des structures et le Fort.
+
+\begin{longtable}{p{0.32\textwidth} p{0.58\textwidth}}
+\toprule
+\textbf{Carte} & \textbf{Rôle} \\
+\midrule
+Miner & Unité orientée économie et progression. \\
+UFO Cow & Unité de combat au comportement spécifique. \\
+European King & Unité puissante de type personnage. \\
+Knight & Unité de mêlée équilibrée. \\
+Archer & Unité à distance. \\
+Spearman & Unité polyvalente de front. \\
+Bomber & Unité orientée dégâts de zone. \\
+Engineer & Unité de soutien et de construction. \\
+Priest & Unité de soin et d'assistance. \\
+Dragon & Unité lourde et menaçante. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Cartes World Effect}
+Les cartes World Effect placent des structures, des bâtiments de ressources ou des éléments défensifs sur le plateau.
+
+\begin{longtable}{p{0.32\textwidth} p{0.58\textwidth}}
+\toprule
+\textbf{Carte} & \textbf{Rôle} \\
+\midrule
+Field & Zone de terrain simple. \\
+Mines Alert & Élément de contrôle ou de défense. \\
+Camp & Structure de soutien. \\
+Wall & Défense de blocage. \\
+Watch Tower & Structure de vision et de pression. \\
+Hospital & Structure de soin. \\
+Anti-Air Tower & Défense contre les unités volantes. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Cartes Spell}
+Les cartes Spell appliquent un effet immédiat: soin, dégâts, buff, débuff ou utilité générale.
+
+\begin{longtable}{p{0.32\textwidth} p{0.58\textwidth}}
+\toprule
+\textbf{Carte} & \textbf{Rôle} \\
+\midrule
+Revival & Restaure une unité ou renforce la survie. \\
++2 Speed & Augmente la mobilité. \\
+Freeze & Ralentit ou bloque l'action adverse. \\
+Tax Collection & Génère une ressource supplémentaire. \\
+Sabotage & Perturbe la structure ou l'économie adverse. \\
+Lightning Strike & Inflige des dégâts directs. \\
+\bottomrule
+\end{longtable}
+
+\section{Architecture logicielle}
+L'architecture du projet repose sur une séparation nette entre les données, les règles, l'interface et l'application des effets. Cela permet de modifier le comportement du jeu sans réécrire tout le code.
+
+\subsection{Design orienté données}
+Les statistiques des cartes et plusieurs paramètres du jeu sont stockés dans des \textit{ScriptableObjects}. Cette approche évite d'encoder les valeurs directement dans les scripts, ce qui facilite l'équilibrage et la maintenance.
+
+\subsection{Pipeline d'exécution d'une carte}
+Lorsqu'une carte est jouée, la demande suit un pipeline précis:
+
+\begin{center}
+\texttt{CardPlayRequest $\rightarrow$ Validator $\rightarrow$ Effect Factory $\rightarrow$ State Writer $\rightarrow$ CardPlayResult}
+\end{center}
+
+Ce découpage limite les erreurs et clarifie le rôle de chaque composant.
+
+\begin{itemize}[leftmargin=1.2cm]
+    \item \textbf{Validator:} vérifie si l'action est autorisée.
+    \item \textbf{Effect Factory:} crée l'effet correspondant.
+    \item \textbf{State Writer:} applique le résultat dans l'état du jeu.
+    \item \textbf{CardPlayResult:} renvoie le succès ou l'échec de l'action.
+\end{itemize}
+
+\subsection{Coordonnées hexagonales}
+Le plateau utilise une grille hexagonale \textit{pointy-top} avec coordonnées axiales $(q, r)$. Ce choix simplifie les calculs de voisinage, de portée et de déplacement.
+
+\subsection{IA basée sur la valeur utilitaire}
+L'adversaire ordinateur n'utilise pas une suite d'actions fixe. Il évalue plutôt plusieurs possibilités avec un score utilitaire, puis sélectionne l'action la plus intéressante selon le contexte de la partie.
+
+\section{Diagrammes UML}
+Cette section regroupe les diagrammes principaux du projet. Ils sont conservés tels quels pour garder la trace de la conception originale.
+
+\subsection{Flux principal d'une partie}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{main_match_flow.png}
+    \caption{Main Match Flow - Activity Diagram}
+    \label{fig:main-match-flow}
+\end{figure}
+
+\subsection{Phase de jeu du joueur}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{player_play_phase.png}
+    \caption{Player Play Phase - Activity Diagram}
+    \label{fig:player-play-phase}
+\end{figure}
+
+\subsection{Pipeline de carte}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{card_play_pipeline.png}
+    \caption{Card Play Pipeline - Activity Diagram}
+    \label{fig:card-play-pipeline}
+\end{figure}
+
+\subsection{Architecture simplifiée}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{main_class_diagram.png}
+    \caption{Main Class Diagram - Simplified Architecture}
+    \label{fig:main-class-diagram}
+\end{figure}
+
+\section{Organisation du développement}
+Le projet a été divisé entre quatre membres afin de réduire les interférences et de garder une responsabilité claire pour chaque sous-système.
+
+\begin{longtable}{p{0.22\textwidth} p{0.28\textwidth} p{0.42\textwidth}}
+\toprule
+\textbf{Membre} & \textbf{Rôle} & \textbf{Responsabilités principales} \\
+\midrule
+Mohamed Ali & Game Logic \& Balancing Lead & Flux principal, gestion des tours, argent, Fort HP, main de cartes, règles de victoire, équilibrage, documentation V1. \\
+Abdelali & Hex Board \& Combat Engineer & Grille hexagonale, système de tuiles, zones de placement, déplacement, portée, dégâts, nettoyage des unités mortes, règles air/anti-air. \\
+Rabi a & Computer Opponent \& Game UI & IA complète, scoring des actions, HUD, main du joueur, sélection des cartes, ciblage, retours d'erreur, écran de fin. \\
+Fatine & Card System \& Effects Architect & Classes de cartes, données \textit{ScriptableObject}, pipeline de carte, factory d'effets, effets de soin, dégâts, invocations, buffs et économie. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Lecture de l'organisation}
+Cette répartition permettait à chaque personne de travailler sur un bloc cohérent. Le résultat est un projet plus lisible, avec moins de dépendances directes entre les parties du code.
+
+\section{Méthode de réalisation}
+Le projet a été construit de manière progressive. L'équipe a commencé par établir le plateau et le flux général du tour, puis a ajouté les cartes, les effets, le combat, l'interface et enfin l'IA.
+
+\subsection{Étapes principales}
+\begin{itemize}[leftmargin=1.2cm]
+    \item Prototype du plateau hexagonal.
+    \item Mise en place des tours et des ressources.
+    \item Intégration du système de cartes.
+    \item Développement du pipeline de validation et d'application.
+    \item Ajout du HUD et des retours utilisateur.
+    \item Intégration de l'IA utilitaire.
+\end{itemize}
+
+\subsection{Choix techniques}
+Les choix les plus importants sont restés simples:
+\begin{itemize}[leftmargin=1.2cm]
+    \item Unity pour le moteur de jeu.
+    \item C\# pour la logique.
+    \item \textit{ScriptableObjects} pour les données.
+    \item Architecture modulaire pour garder le code propre.
+\end{itemize}
+
+\section{Améliorations futures}
+La version actuelle atteint son objectif principal, mais plusieurs pistes d'évolution restent naturelles:
+\begin{itemize}[leftmargin=1.2cm]
+    \item enrichir la variété des cartes,
+    \item améliorer les effets visuels et sonores,
+    \item raffiner l'IA,
+    \item ajouter davantage de retour graphique sur le plateau,
+    \item renforcer l'équilibrage général des coûts et des dégâts.
+\end{itemize}
+
+\section{Conclusion}
+Cards War représente une première réalisation complète de jeu de stratégie tour par tour sous Unity. Le projet couvre les éléments essentiels du gameplay: plateau hexagonal, cartes, phases de tour, combat, économie, effets instantanés et adversaire contrôlé par IA.
+
+L'intérêt principal du projet ne se limite pas au résultat jouable. Il réside aussi dans la manière dont les responsabilités ont été séparées, dans l'utilisation de données externes pour le contenu du jeu, et dans la mise en place d'un pipeline clair pour l'exécution des cartes.
+
+En tant que premier projet majeur, le résultat obtenu constitue une base solide pour des extensions futures, tout en démontrant une bonne maîtrise des notions fondamentales de conception et d'intégration dans Unity.
+
+\appendix
+\section{Annexe A - Résumé des phases}
+\begin{longtable}{p{0.25\textwidth} p{0.66\textwidth}}
+\toprule
+\textbf{Phase} & \textbf{Résumé} \\
+\midrule
+Income Phase & Le joueur reçoit un revenu fixe pour préparer ses actions. \\
+Buy / Discard Phase & Le joueur achète une carte selon un coût choisi ou défausse une carte contre un petit gain. \\
+Play Phase & Le joueur pose, déplace, attaque ou lance des effets. \\
+End Phase & Le moteur vérifie la destruction du Fort et change de joueur si nécessaire. \\
+\bottomrule
+\end{longtable}
+
+\section{Annexe B - Répartition des catégories}
+\begin{longtable}{p{0.25\textwidth} p{0.66\textwidth}}
+\toprule
+\textbf{Catégorie} & \textbf{Rôle principal} \\
+\midrule
+Character & Générer des unités de combat. \\
+World Effect & Installer des structures, bâtiments et défenses. \\
+Spell & Appliquer un effet immédiat sur la partie. \\
+\bottomrule
+\end{longtable}
+
+\end{document}

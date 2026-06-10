@@ -1249,11 +1249,15 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
 
         if (IsHandFull(currentPlayer))
         {
-            if (!TryComputerDiscardBeforeBuy())
+            if (!TryComputerDiscardBeforeBuy(true))
             {
                 Debug.Log(currentPlayer.playerName + " skipped buy: hand is full.");
                 return false;
             }
+        }
+        else
+        {
+            TryComputerDiscardBeforeBuy(false);
         }
 
         string ownerKey = ResolveCurrentOwnerKey();
@@ -1265,6 +1269,17 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         {
             Debug.Log(currentPlayer.playerName + " skipped buy: no affordable cost tier has cards.");
             return false;
+        }
+
+        bool hasHealthyHand = currentPlayer.handCount >= 3;
+        bool isFortHealthy = currentPlayer.fortHp > 8;
+        if (hasHealthyHand && isFortHealthy && currentPlayer.money >= 3 && currentPlayer.money < 9)
+        {
+            if (UnityEngine.Random.value < 0.5f)
+            {
+                Debug.Log(currentPlayer.playerName + " skipped buy to save money for a higher tier!");
+                return false;
+            }
         }
 
         CardRuntimeState boughtCard = shouldBuyCharacter
@@ -1294,7 +1309,7 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         return true;
     }
 
-    private bool TryComputerDiscardBeforeBuy()
+    private bool TryComputerDiscardBeforeBuy(bool forceDiscard = true)
     {
         if (currentPlayer == null || currentPlayer.handCards == null || currentPlayer.handCards.Count == 0)
         {
@@ -1313,7 +1328,8 @@ public class GameManager : MonoBehaviour  //GameManager gère la logique du jeu
         }
 
         float usefulness = EvaluateComputerCardUsefulness(discardCandidate);
-        if (usefulness >= 8000f)
+        float threshold = forceDiscard ? 8000f : 80f;
+        if (usefulness >= threshold)
         {
             return false;
         }

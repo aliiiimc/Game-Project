@@ -83,15 +83,18 @@ namespace FortGame.Computer
             }
 
             // 2. Save My Fort (Defensive priority)
+            if (myState != null && action.isDefensiveMove)
+            {
+                int maxFortHp = 20;
+                GameManager gm = UnityEngine.Object.FindFirstObjectByType<GameManager>();
+                if (gm != null && gm.gameConfig != null)
+                {
+                    maxFortHp = Mathf.Max(1, gm.gameConfig.startingFortHp);
+                }
 
-            if (myState != null && myState.fortHp < 5 && action.isDefensiveMove)  // Ali: avoids an error if myState is null.
-            {
-                score += 500f; // High priority if dying
-            }
-            else if (action.isDefensiveMove)
-            {
-                // Minor points for defending if not in critical danger, just to be safe
-                score += 40f;
+                int missingHp = Mathf.Max(0, maxFortHp - myState.fortHp);
+                score += missingHp * 30f;
+                score += 40f; // Base defensive bonus
             }
 
             // 3. Favorable Unit Trades (+100 to +300)
@@ -144,7 +147,7 @@ namespace FortGame.Computer
                 score += action.isDefensiveMove ? 35f : 10f;
             }
 
-            if (action.movesBackward)
+            if (action.movesBackward && !action.isDefensiveMove)
             {
                 score -= 50f;
             }

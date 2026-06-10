@@ -417,7 +417,11 @@ namespace FortGame.Computer
 
             if (forwardProgress <= 0)
             {
-                score -= 10f;
+                int col = snapshot.HexGrid.AxialToOffsetColumn(destinationTile.coord);
+                if (!ShouldDefend(snapshot, col))
+                {
+                    score -= 10f;
+                }
             }
 
             return score;
@@ -1009,6 +1013,28 @@ namespace FortGame.Computer
                 return 0f;
             }
 
+            bool isAlly = false;
+            if (actionType == ActionType.AttackFort)
+            {
+                isAlly = targetTile.owner == snapshot.ActingPlayerKey;
+            }
+            else if (actionType == ActionType.AttackStructure)
+            {
+                isAlly = targetTile.worldEffectOwner == snapshot.ActingPlayerKey;
+            }
+            else if (actionType == ActionType.AttackUnit)
+            {
+                isAlly = targetUnit != null && targetUnit.owner == snapshot.ActingPlayerKey;
+            }
+
+            if (attacker.attack <= 0 && !isAlly)
+            {
+                if (!(actionType == ActionType.AttackStructure && attacker.canColonizeEnemyWorldEffects))
+                {
+                    return -1000f;
+                }
+            }
+
             if (actionType == ActionType.AttackFort)
             {
                 return ScoreFortAttack(snapshot, attacker);
@@ -1021,6 +1047,16 @@ namespace FortGame.Computer
             if (actionType != ActionType.AttackUnit || targetUnit == null)
             {
                 return 0f;
+            }
+
+            if (isAlly)
+            {
+                int missingHp = targetUnit.RuntimeCard != null ? GetCardMissingHp(targetUnit.RuntimeCard) : 0;
+                if (missingHp > 0)
+                {
+                    return 80f + (missingHp * 20f); // High priority to heal damaged units
+                }
+                return 0f; // Don't heal full HP units
             }
 
             int targetHp = Mathf.Max(1, targetUnit.health);
@@ -1191,6 +1227,18 @@ namespace FortGame.Computer
                 return 400f;
             }
 
+            bool isAlly = targetTile.worldEffectOwner == snapshot.ActingPlayerKey;
+            if (isAlly)
+            {
+                int currentHp = GetCardCurrentHp(runtimeTarget);
+                int missingHp = Mathf.Max(0, structureHp - currentHp);
+                if (missingHp > 0)
+                {
+                    return 80f + (missingHp * 20f);
+                }
+                return 0f;
+            }
+
             int attackDamage = Mathf.Max(0, attacker.attack);
             float score = attackDamage * 25f;
 
@@ -1340,15 +1388,15 @@ namespace FortGame.Computer
 
             if (distanceToFort <= 2)
             {
-                return 120f;
+                return 250f;
             }
 
             if (distanceToFort <= 4)
             {
-                return 70f;
+                return 120f;
             }
 
-            return Mathf.Max(0f, 6 - distanceToFort) * 12f;
+            return Mathf.Max(0f, 6 - distanceToFort) * 18f;
         }
 
         private static AttackType GetAttackType(CharacterCardData cardData)
@@ -1538,15 +1586,16 @@ namespace FortGame.Computer
             return GetSpellDamageAmount(runtimeCard, fortTarget) >= snapshot.OpponentPlayer.fortHp;
         }
 
-        // Ali: defensive placement matters more when the AI Fort is low.
         private static bool ShouldDefend(ComputerGameSnapshot snapshot, int col)
         {
-            if (snapshot?.ActingPlayer == null)
+            if (snapshot?.ActingPlayer == null || snapshot.HexGrid == null)
             {
                 return false;
             }
 
-            return snapshot.ActingPlayer.fortHp < 8 && IsDefensiveColumn(snapshot, col);
+            // Defend if the action is in the AI's half of the board
+            int midPoint = snapshot.HexGrid.gridWidth / 2;
+            return snapshot.ActingPlayerKey == "enemy" ? col >= midPoint : col < midPoint;
         }
 
 

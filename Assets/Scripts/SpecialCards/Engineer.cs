@@ -51,7 +51,7 @@ public class Engineer : SpecialCardScriptBase
         if (hudManager != null)
         {
             string structureName = worldEffect?.sourceCard?.SourceCard?.DisplayName ?? "structure";
-            hudManager.ShowInfo($"Engineer repaired {structureName} for {restoredHp} HP.");
+            hudManager.ShowSpellAnnouncement($"Engineer repaired {structureName} for {restoredHp} HP.");
         }
         return true;
     }

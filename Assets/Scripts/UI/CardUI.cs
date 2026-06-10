@@ -180,6 +180,25 @@ namespace FortGame.UI
             Vector2 targetPos = GetTargetLocalPosition();
             Vector3 targetScale = Vector3.one * liftScale;
 
+            if (hudSelectedCardAnchor == null)
+            {
+                GameObject anchorObj = GameObject.Find("SelectedCardAnchor");
+                if (anchorObj != null)
+                {
+                    hudSelectedCardAnchor = anchorObj.GetComponent<RectTransform>();
+                }
+            }
+
+            Canvas parentCanvas = GetComponentInParent<Canvas>();
+            if (parentCanvas != null && hudSelectedCardAnchor != null)
+            {
+                StatsPanelUI statsPanel = StatsPanelUI.GetOrCreate(parentCanvas);
+                if (statsPanel != null)
+                {
+                    statsPanel.Show(runtimeCard, hudSelectedCardAnchor, liftScale, liftDuration);
+                }
+            }
+
             yield return SmoothMove(targetPos, targetScale, liftDuration);
         }
 
@@ -189,6 +208,16 @@ namespace FortGame.UI
             {
                 transform.localScale = Vector3.one;
                 yield break;
+            }
+
+            Canvas parentCanvas = GetComponentInParent<Canvas>();
+            if (parentCanvas != null)
+            {
+                StatsPanelUI statsPanel = StatsPanelUI.GetOrCreate(parentCanvas);
+                if (statsPanel != null)
+                {
+                    statsPanel.Hide(liftDuration * 0.85f);
+                }
             }
 
             yield return SmoothMove(_savedAnchoredPosition, _savedScale, liftDuration * 0.85f);

@@ -195,7 +195,7 @@ namespace FortGame.UI
                 StatsPanelUI statsPanel = StatsPanelUI.GetOrCreate(parentCanvas);
                 if (statsPanel != null)
                 {
-                    statsPanel.Show(runtimeCard, hudSelectedCardAnchor, liftScale, liftDuration);
+                    statsPanel.Show(runtimeCard, transform.position, hudSelectedCardAnchor, liftScale, liftDuration);
                 }
             }
 

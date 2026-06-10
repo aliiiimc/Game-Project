@@ -106,7 +106,7 @@ namespace FortGame.UI
             }
         }
 
-        public void Show(CardRuntimeState card, RectTransform cardAnchor, float liftScale, float duration)
+        public void Show(CardRuntimeState card, Vector3 cardStartWorldPos, RectTransform cardAnchor, float liftScale, float duration)
         {
             if (card == null || cardAnchor == null) return;
 
@@ -116,7 +116,7 @@ namespace FortGame.UI
             gameObject.SetActive(true);
             PopulateStats(card);
 
-            _animCoroutine = StartCoroutine(AnimateShow(cardAnchor, liftScale, duration));
+            _animCoroutine = StartCoroutine(AnimateShow(cardStartWorldPos, cardAnchor, liftScale, duration));
         }
 
         public void Hide(float duration)
@@ -161,15 +161,33 @@ namespace FortGame.UI
             }
         }
 
-        private IEnumerator AnimateShow(RectTransform cardAnchor, float liftScale, float duration)
+        private IEnumerator AnimateShow(Vector3 cardStartWorldPos, RectTransform cardAnchor, float liftScale, float duration)
         {
             RectTransform rect = GetComponent<RectTransform>();
-            
-            // Align base position with cardAnchor X
-            rect.anchoredPosition = new Vector2(cardAnchor.anchoredPosition.x, rect.anchoredPosition.y);
-            
-            float targetY = cardAnchor.anchoredPosition.y + (cardAnchor.rect.height * 0.5f * liftScale) + (rect.rect.height * 0.5f) + 15f;
-            float startY = targetY + 50f; // Start 50 units higher and slide down
+            RectTransform canvasRect = transform.parent as RectTransform;
+
+            // Align anchors and pivot with cardAnchor to ensure they share the exact same space
+            rect.anchorMin = cardAnchor.anchorMin;
+            rect.anchorMax = cardAnchor.anchorMax;
+            rect.pivot = cardAnchor.pivot;
+
+            // 1. Calculate Target Position (centered above the selected card final position)
+            float targetX = cardAnchor.anchoredPosition.x;
+            float verticalOffset = 15f; // Spacing between card top edge and panel bottom edge (Adjustable)
+            float targetY = cardAnchor.anchoredPosition.y + (cardAnchor.rect.height * 0.5f * liftScale) + (rect.rect.height * 0.5f) + verticalOffset;
+            Vector2 targetAnchoredPos = new Vector2(targetX, targetY);
+
+            // 2. Calculate Start Position (convert card's world position to Canvas space)
+            Vector2 startAnchoredPos;
+            if (canvasRect != null)
+            {
+                Vector3 localStartPos = canvasRect.InverseTransformPoint(cardStartWorldPos);
+                startAnchoredPos = new Vector2(localStartPos.x, localStartPos.y);
+            }
+            else
+            {
+                startAnchoredPos = targetAnchoredPos;
+            }
 
             float elapsed = 0f;
             while (elapsed < duration)
@@ -178,12 +196,12 @@ namespace FortGame.UI
                 float t = Mathf.Clamp01(elapsed / duration);
                 float ease = 1f - Mathf.Pow(1f - t, 3f); // Ease out cubic
 
-                rect.anchoredPosition = new Vector2(rect.anchoredPosition.x, Mathf.Lerp(startY, targetY, ease));
+                rect.anchoredPosition = Vector2.Lerp(startAnchoredPos, targetAnchoredPos, ease);
                 _canvasGroup.alpha = Mathf.Lerp(0f, 1f, ease);
                 yield return null;
             }
 
-            rect.anchoredPosition = new Vector2(rect.anchoredPosition.x, targetY);
+            rect.anchoredPosition = targetAnchoredPos;
             _canvasGroup.alpha = 1f;
         }
 

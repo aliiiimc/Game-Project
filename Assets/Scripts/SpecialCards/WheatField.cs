@@ -132,6 +132,7 @@ public class WheatField
         clusterId = CreateClusterId();
         int safeHpPerTile = Mathf.Max(1, resolvedHpPerTile);
         int placedTileCount = 0;
+        List<HexTile> placedTiles = new List<HexTile>();
 
         for (int i = 0; i < tiles.Count; i++)
         {
@@ -152,14 +153,25 @@ public class WheatField
                 continue;
             }
 
-            if (worldEffectManager.TrySetFieldData(tile, clusterId, safeHpPerTile, bonusMoneyPerTurn))
+            placedTileCount++;
+            placedTiles.Add(tile);
+        }
+
+        // Use structureHp directly as the global HP pool of the field cluster, bypassing the obsolete hpPerTile calculation
+        int clusterTotalHp = worldEffectCard != null && worldEffectCard.structureHp.HasValue 
+            ? worldEffectCard.structureHp.Value 
+            : (placedTileCount * safeHpPerTile);
+
+        for (int i = 0; i < placedTiles.Count; i++)
+        {
+            if (worldEffectManager.TrySetFieldData(placedTiles[i], clusterId, clusterTotalHp, bonusMoneyPerTurn))
             {
-                placedTileCount++;
+                continue;
             }
         }
 
         Debug.Log($"[SpecialTrigger][WheatField] Cluster '{clusterId}' created with {placedTileCount} tile(s) for owner '{owner}'.");
 
-        return true;
+        return placedTileCount > 0;
     }
 }

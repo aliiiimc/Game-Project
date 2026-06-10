@@ -104,6 +104,11 @@ public class WorldEffectManager : MonoBehaviour
             return false;
         }
 
+        if (tile.HasWorldEffect() && tile.isFieldTile && !string.IsNullOrWhiteSpace(tile.fieldClusterId))
+        {
+            return RemoveFieldCluster(tile.fieldClusterId);
+        }
+
         if (worldEffectsByTile.TryGetValue(tile, out WorldEffect worldEffect))
         {
             worldEffectsByTile.Remove(tile);
@@ -179,13 +184,21 @@ public class WorldEffectManager : MonoBehaviour
         }
 
         int safeAmount = Mathf.Max(1, amount);
-        tile.fieldHp -= safeAmount;
-
-        if (tile.fieldHp <= 0)
+        List<HexTile> clusterTiles = GetFieldClusterTiles(tile);
+        if (clusterTiles.Count == 0)
         {
-            return Remove(tile);
+            return false;
         }
 
+        int currentClusterHp = GetFieldClusterHp(tile);
+        int remainingClusterHp = Mathf.Max(0, currentClusterHp - safeAmount);
+
+        if (remainingClusterHp <= 0)
+        {
+            return RemoveFieldCluster(tile.fieldClusterId);
+        }
+
+        SyncFieldClusterHp(clusterTiles, remainingClusterHp);
         return true;
     }
 
@@ -362,5 +375,113 @@ public class WorldEffectManager : MonoBehaviour
             && tile.HasWorldEffect()
             && !string.IsNullOrWhiteSpace(tile.worldEffectOwner)
             && tile.worldEffectOwner != "none";
+    }
+
+    private List<HexTile> GetFieldClusterTiles(HexTile tile)
+    {
+        List<HexTile> clusterTiles = new List<HexTile>();
+        if (tile == null || !tile.HasWorldEffect() || !tile.isFieldTile)
+        {
+            return clusterTiles;
+        }
+
+        string clusterId = tile.fieldClusterId;
+        if (string.IsNullOrWhiteSpace(clusterId))
+        {
+            clusterTiles.Add(tile);
+            return clusterTiles;
+        }
+
+        HexTile[] allTiles = UnityEngine.Object.FindObjectsByType<HexTile>(FindObjectsSortMode.None);
+        for (int i = 0; i < allTiles.Length; i++)
+        {
+            HexTile candidate = allTiles[i];
+            if (candidate != null
+                && candidate.HasWorldEffect()
+                && candidate.isFieldTile
+                && candidate.fieldClusterId == clusterId)
+            {
+                clusterTiles.Add(candidate);
+            }
+        }
+
+        return clusterTiles;
+    }
+
+    private int GetFieldClusterHp(HexTile tile)
+    {
+        List<HexTile> clusterTiles = GetFieldClusterTiles(tile);
+        int highestHp = 0;
+        for (int i = 0; i < clusterTiles.Count; i++)
+        {
+            highestHp = Mathf.Max(highestHp, Mathf.Max(0, clusterTiles[i].fieldHp));
+        }
+
+        return highestHp;
+    }
+
+    private void SyncFieldClusterHp(List<HexTile> clusterTiles, int remainingClusterHp)
+    {
+        int safeRemainingHp = Mathf.Max(0, remainingClusterHp);
+        for (int i = 0; i < clusterTiles.Count; i++)
+        {
+            if (clusterTiles[i] != null)
+            {
+                clusterTiles[i].fieldHp = safeRemainingHp;
+            }
+        }
+    }
+
+    private bool RemoveFieldCluster(string clusterId)
+    {
+        if (string.IsNullOrWhiteSpace(clusterId))
+        {
+            return false;
+        }
+
+        List<HexTile> clusterTiles = new List<HexTile>();
+        HexTile[] allTiles = UnityEngine.Object.FindObjectsByType<HexTile>(FindObjectsSortMode.None);
+        for (int i = 0; i < allTiles.Length; i++)
+        {
+            HexTile tile = allTiles[i];
+            if (tile != null
+                && tile.HasWorldEffect()
+                && tile.isFieldTile
+                && tile.fieldClusterId == clusterId)
+            {
+                clusterTiles.Add(tile);
+            }
+        }
+
+        bool removedAny = false;
+        for (int i = 0; i < clusterTiles.Count; i++)
+        {
+            HexTile tile = clusterTiles[i];
+            if (tile == null)
+            {
+                continue;
+            }
+
+            if (worldEffectsByTile.TryGetValue(tile, out WorldEffect worldEffect))
+            {
+                worldEffectsByTile.Remove(tile);
+                if (worldEffect != null)
+                {
+                    worldEffect.RemoveFromBoard();
+                }
+                else
+                {
+                    tile.RemoveWorldEffect();
+                }
+            }
+            else
+            {
+                tile.RemoveWorldEffect();
+            }
+
+            removedAny = true;
+        }
+
+        return removedAny;
     }
 }

@@ -10,6 +10,7 @@ namespace FortGame.Computer
         PlaySpellCard,
         MoveUnit,
         AttackUnit,
+        AttackWorldEffect,
         AttackFort,
         EndTurn
     }

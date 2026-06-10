@@ -139,10 +139,17 @@ public sealed class GameManagerCardStateWriter : MonoBehaviour, ICardStateWriter
                         }
                     }
                     if (boardSource != null
-                    && !boardSource.IsInPlayerDeploymentZone(tile, owner)
-                    && BoardPlacementRules.CanPlaceCharacter(tile, owner, boardSource, characterCardData))
+                        && !boardSource.IsInPlayerDeploymentZone(tile, owner)
+                        && BoardPlacementRules.CanPlaceCharacter(tile, owner, boardSource, characterCardData))
                     {
-                        LogTransaction($"[SpecialTrigger][Camp] Character spawned using Camp override at {tile}.");
+                        if (characterCardData is UfoCowCardData)
+                        {
+                            LogTransaction($"[SpecialTrigger][UfoCow] Character spawned adjacent to enemy field at {tile}.");
+                        }
+                        else
+                        {
+                            LogTransaction($"[SpecialTrigger][Camp] Character spawned using Camp override at {tile}.");
+                        }
                     }
                 }
             }

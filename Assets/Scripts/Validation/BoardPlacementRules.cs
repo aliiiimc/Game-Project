@@ -15,15 +15,15 @@ public static class BoardPlacementRules // verify if a board-placement card can 
             return false;
         }
 
-        if (CanPlaceUfoCowOnField(characterCard, tile))
-        {
-            return true;
-        }
-
         // (abdo :) Movement may allow standing on some world effects, but normal card spawns still need a plain empty tile.
         if (tile.HasUnitOccupant() || tile.tileType == "fort" || tile.HasWorldEffect() || !tile.CanUnitOccupy())
         {
             return false;
+        }
+
+        if (CanPlaceUfoCowAdjacentToEnemyField(characterCard, tile, playerKey, grid))
+        {
+            return true;
         }
 
         if (grid.IsInPlayerDeploymentZone(coord, playerKey))
@@ -89,20 +89,29 @@ public static class BoardPlacementRules // verify if a board-placement card can 
         return null;
     }
 
-    private static bool CanPlaceUfoCowOnField(CharacterCardData characterCard, HexTile tile)
+    private static bool CanPlaceUfoCowAdjacentToEnemyField(CharacterCardData characterCard, HexTile tile, string playerKey, HexGrid grid)
     {
-        if (characterCard == null || tile == null)
+        if (!(characterCard is UfoCowCardData) || tile == null || grid == null || string.IsNullOrWhiteSpace(playerKey))
         {
             return false;
         }
 
-        if (!string.Equals(characterCard.DisplayName, "UFO Cow", System.StringComparison.OrdinalIgnoreCase))
+        System.Collections.Generic.List<HexTile> neighbors = HexUtils.GetNeighbors(tile, grid);
+        for (int i = 0; i < neighbors.Count; i++)
         {
-            return false;
+            HexTile neighbor = neighbors[i];
+            if (neighbor == null
+                || !neighbor.HasWorldEffect()
+                || !neighbor.isFieldTile
+                || neighbor.worldEffectOwner == "none"
+                || neighbor.worldEffectOwner == playerKey)
+            {
+                continue;
+            }
+
+            return true;
         }
 
-        return tile.HasWorldEffect()
-            && tile.isFieldTile
-            && tile.CanUnitOccupy();
+        return false;
     }
 }

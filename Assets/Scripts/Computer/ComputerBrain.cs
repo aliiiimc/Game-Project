@@ -243,6 +243,13 @@ namespace FortGame.Computer
                 {
                     return true;
                 }
+
+                if (targetTile.HasWorldEffect()
+                    && !targetTile.isMineTile
+                    && targetTile.worldEffectOwner == snapshot.OpponentPlayerKey)
+                {
+                    return true;
+                }
             }
 
             return false;
@@ -257,7 +264,9 @@ namespace FortGame.Computer
         private static bool IsAttackAction(ComputerAction action)
         {
             return action != null
-                && (action.type == ActionType.AttackUnit || action.type == ActionType.AttackFort);
+                && (action.type == ActionType.AttackUnit
+                    || action.type == ActionType.AttackWorldEffect
+                    || action.type == ActionType.AttackFort);
         }
     }
 }

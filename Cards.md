@@ -3,7 +3,7 @@
 ## Character
 
 - Miner: fast objective unit, high movement range, low damage, medium-low HP, cannot attack on the turn it is spawned
-- UFO Cow: anti-resource unit, low damage against units/buildings, bonus damage against Field/resource buildings
+- UFO Cow: anti-resource unit, deals 2 damage to normal targets and 4 to Wheat Field/resource fields
 - European King: colonizes opponent building and dies, low stats, boosts troops
 - Knight: avg stats
 - Archer: avg stats, long range

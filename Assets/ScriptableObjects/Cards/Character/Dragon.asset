@@ -29,7 +29,7 @@ MonoBehaviour:
   startsReadyToAttack: 0
   unitMovementCapacity:
     hasValue: 1
-    value: 4
+    value: 2
   canColonizeEnemyWorldEffects: 0
   projectileVisuals:
     projectilePrefab: {fileID: 834101, guid: 461591f039cd49a68bd920f44c8aafca, type: 3}

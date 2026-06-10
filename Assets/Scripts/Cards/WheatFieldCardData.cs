@@ -7,4 +7,9 @@ public class WheatFieldCardData : WorldEffectCardData
     public int tilesPerField = 6;
     public int hpPerTile = 1;
     public int bonusMoneyPerTurn = 1;
+
+    public int GetTotalClusterHp()
+    {
+        return structureHp.HasValue ? structureHp.Value : (Mathf.Max(1, tilesPerField) * Mathf.Max(1, hpPerTile));
+    }
 }

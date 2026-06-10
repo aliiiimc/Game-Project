@@ -347,34 +347,96 @@ namespace FortGame.UI
             {
                 string speedText = charData.unitMovementCapacity.HasValue ? charData.unitMovementCapacity.Value.ToString() : "-";
                 
+                // Priest special display
+                if (charData.specialCardId == SpecialCardIds.CharacterPriest || charData.cardName == "Priest")
+                {
+                    statsText.text = $"HP : {charData.maxHp}\nHeal : {charData.attackDamage}\nRange : {charData.attackRange}\nMovement : {speedText}";
+                }
+                // Engineer special display
+                else if (charData is EngineerCardData engineer)
+                {
+                    statsText.text = $"HP : {charData.maxHp}\nRepair : {engineer.structureRepairBoostAmount}\nRange : {charData.attackRange}\nMovement : {speedText}";
+                }
                 // Special display for UFO Cow to show field consume damage alongside normal attack damage
-                if (charData is UfoCowCardData ufoCow)
+                else if (charData is UfoCowCardData ufoCow)
                 {
                     statsText.text = $"HP : {charData.maxHp}\nDamage : {charData.attackDamage} / <size=75%>{ufoCow.fieldConsumeAmount} for field</size>\nRange : {charData.attackRange}\nMovement : {speedText}";
                 }
                 else
                 {
-                    statsText.text = $"HP : {charData.maxHp}\nDamage : {charData.attackDamage}\nRange : {charData.attackRange}\nMovement : {speedText}";
+                    string damageLine = charData.attackDamage > 0 ? $"\nDamage : {charData.attackDamage}" : "";
+                    statsText.text = $"HP : {charData.maxHp}{damageLine}\nRange : {charData.attackRange}\nMovement : {speedText}";
                 }
             }
             else if (data is WorldEffectCardData weData)
             {
-                // Special display for Mines to show number of mines and individual mine trigger damage
-                if (weData is MinesCardData mines)
+                // Healing Station (Hospital) special display
+                if (weData is HospitalCardData hospital)
                 {
-                    statsText.text = $"Mines : {mines.minesToPlace}\nDamage : {mines.mineDamage}\nRange : -";
+                    string hpText = hospital.structureHp.HasValue ? hospital.structureHp.Value.ToString() : "-";
+                    statsText.text = $"HP : {hpText}\nHeal : {hospital.healAmount}\nRange : {hospital.triggerRange}";
+                }
+                // Wheat Field special display
+                else if (weData is WheatFieldCardData wheatField)
+                {
+                    string hpText = wheatField.structureHp.HasValue ? wheatField.structureHp.Value.ToString() : "-";
+                    statsText.text = $"HP : {hpText}\nGold / Turn : {wheatField.bonusMoneyPerTurn}";
+                }
+                // Wall special display
+                else if (weData is WallCardData wall)
+                {
+                    string hpText = wall.structureHp.HasValue ? wall.structureHp.Value.ToString() : "-";
+                    statsText.text = $"HP : {hpText}\nLength : {wall.tilesPerWall}";
+                }
+                // Special display for Mines to show number of mines and individual mine trigger damage
+                else if (weData is MinesCardData mines)
+                {
+                    statsText.text = $"Mines : {mines.minesToPlace}\nDamage : {mines.mineDamage}";
                 }
                 else
                 {
                     string hpText = weData.structureHp.HasValue ? weData.structureHp.Value.ToString() : "-";
-                    string dmgText = weData.structureDamage.HasValue ? weData.structureDamage.Value.ToString() : "-";
-                    string rangeText = weData.worldEffectAttackRange.HasValue ? weData.worldEffectAttackRange.Value.ToString() : "-";
-                    statsText.text = $"HP : {hpText}\nDamage : {dmgText}\nRange : {rangeText}";
+                    string stats = $"HP : {hpText}";
+                    if (weData.structureDamage.HasValue && weData.structureDamage.Value > 0)
+                    {
+                        stats += $"\nDamage : {weData.structureDamage.Value}";
+                    }
+                    if (weData.worldEffectAttackRange.HasValue && weData.worldEffectAttackRange.Value > 0)
+                    {
+                        stats += $"\nRange : {weData.worldEffectAttackRange.Value}";
+                    }
+                    statsText.text = stats;
                 }
             }
             else if (data is SpellCardData spellData)
             {
-                statsText.text = $"Damage : {spellData.effectPower}\nDuration : {spellData.effectDurationTurns}";
+                // Speed Spell special display
+                if (spellData is SpeedSpellCardData speedSpell)
+                {
+                    statsText.text = $"Speed Bonus : +{speedSpell.movementCapacityBonus}\nDuration : {spellData.effectDurationTurns}";
+                }
+                else if (spellData.effectType == SpellEffectType.Damage)
+                {
+                    if (spellData.effectDurationTurns > 0)
+                    {
+                        statsText.text = $"Damage : {spellData.effectPower}\nDuration : {spellData.effectDurationTurns}";
+                    }
+                    else
+                    {
+                        statsText.text = $"Damage : {spellData.effectPower}";
+                    }
+                }
+                else
+                {
+                    if (spellData.effectDurationTurns > 0)
+                    {
+                        statsText.text = $"Duration : {spellData.effectDurationTurns}";
+                    }
+                    else
+                    {
+                        statsText.text = string.Empty;
+                    }
+                }
             }
             else
             {

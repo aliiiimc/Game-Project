@@ -23,15 +23,15 @@ MonoBehaviour:
   category: 1
   structureHp:
     hasValue: 1
-    value: 8
+    value: 20
   structureDamage:
     hasValue: 0
     value: 0
   worldEffectAttackRange:
     hasValue: 0
     value: 0
-  allowsUnitPassThrough: 1
-  allowsUnitOccupancy: 1
+  allowsUnitPassThrough: 0
+  allowsUnitOccupancy: 0
   worldEffectOpacity: 1
   attackType: 1
   attackTarget: 0

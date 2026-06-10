@@ -161,6 +161,12 @@ namespace FortGame.Computer
                         : ActionType.PlayWorldEffectCard;
                     bool developsBoard = isCharacterCard && ShouldDevelopBoard(snapshot, col);
 
+                    float tacticalScore = ScorePlacementTile(snapshot, coord, isCharacterCard);
+                    if (runtimeCard.SourceCard is UfoCowCardData)
+                    {
+                        tacticalScore += ScoreUfoCowPlacement(snapshot, coord);
+                    }
+
                     var action = new ComputerAction($"Play {runtimeCard.SourceCard.DisplayName} on {coord}", actionType)
                     {
                         actingPlayerId = snapshot.ActingPlayerKey,
@@ -175,7 +181,7 @@ namespace FortGame.Computer
                         //Ali: hasSynergyOnBoard is for Small scoring bonus score for characters placed forward because they can create board pressure.
                         hasSynergyOnBoard = (isCharacterCard && (ShouldPushForward(snapshot, col) || developsBoard)) || (!isCharacterCard && ShouldDefend(snapshot, col)),
                         // (abdo :) Spawn cards get a tile score so the AI spreads pressure instead of picking the first valid row.
-                        tacticalScore = ScorePlacementTile(snapshot, coord, isCharacterCard),
+                        tacticalScore = tacticalScore,
                         isLateGameCard = runtimeCard.SourceCard.cost >= 4,
                         isEarlyGameCard = runtimeCard.SourceCard.cost <= 2
                     };
@@ -290,7 +296,9 @@ namespace FortGame.Computer
                         continue;
                     }
 
-                    if (targetTile.tileType != "unit" && targetTile.tileType != "fort")
+                    if (targetTile.tileType != "unit"
+                        && targetTile.tileType != "fort"
+                        && !targetTile.HasWorldEffect())
                     {
                         continue;
                     }
@@ -298,17 +306,28 @@ namespace FortGame.Computer
                     _diagnostics.RecordCandidate();
 
                     Unit targetUnit = unitManager.FindUnitOnTile(targetTile);
+                    CardRuntimeState targetWorldEffect = targetUnit == null && targetTile.HasWorldEffect()
+                        ? snapshot.BoardReader != null ? snapshot.BoardReader.GetCardAt(targetTile.coord) : null
+                        : null;
                     ActionType actionType = targetTile.tileType == "fort"
                         ? ActionType.AttackFort
-                        : ActionType.AttackUnit;
+                        : targetUnit != null
+                            ? ActionType.AttackUnit
+                            : ActionType.AttackWorldEffect;
 
                     CardTargetType targetType = actionType == ActionType.AttackFort
                         ? CardTargetType.EnemyFort
-                        : CardTargetType.EnemyUnit;
+                        : actionType == ActionType.AttackUnit
+                            ? CardTargetType.EnemyUnit
+                            : CardTargetType.EnemyStructure;
 
                     string targetName = actionType == ActionType.AttackFort
                         ? "enemy fort"
-                        : targetUnit != null ? targetUnit.name : "enemy unit";
+                        : actionType == ActionType.AttackUnit
+                            ? targetUnit != null ? targetUnit.name : "enemy unit"
+                            : targetWorldEffect != null && targetWorldEffect.SourceCard != null
+                                ? targetWorldEffect.SourceCard.DisplayName
+                                : "enemy world effect";
 
                     int targetColumn = snapshot.HexGrid.AxialToOffsetColumn(targetTile.coord);
 
@@ -323,9 +342,13 @@ namespace FortGame.Computer
                         {
                             type = targetType,
                             tile = targetTile.coord,
-                            targetCard = targetUnit != null ? targetUnit.RuntimeCard : null,
-                            targetPlayerId = targetTile.owner,
-                            targetEntityId = actionType == ActionType.AttackFort ? "fort" : "unit"
+                            targetCard = actionType == ActionType.AttackUnit
+                                ? targetUnit != null ? targetUnit.RuntimeCard : null
+                                : targetWorldEffect,
+                            targetPlayerId = actionType == ActionType.AttackWorldEffect ? targetTile.worldEffectOwner : targetTile.owner,
+                            targetEntityId = actionType == ActionType.AttackFort
+                                ? "fort"
+                                : actionType == ActionType.AttackUnit ? "unit" : "worldEffect"
                         },
                         isGeneratedByLegalReader = true,
                         isLegalAction = true,
@@ -982,6 +1005,11 @@ namespace FortGame.Computer
                 return ScoreFortAttack(snapshot, attacker);
             }
 
+            if (actionType == ActionType.AttackWorldEffect)
+            {
+                return ScoreWorldEffectAttack(snapshot, attacker, targetTile);
+            }
+
             if (actionType != ActionType.AttackUnit || targetUnit == null)
             {
                 return 0f;
@@ -1017,6 +1045,86 @@ namespace FortGame.Computer
             }
 
             return score;
+        }
+
+        private static float ScoreUfoCowPlacement(ComputerGameSnapshot snapshot, AxialCoord coord)
+        {
+            if (snapshot?.HexGrid == null)
+            {
+                return 0f;
+            }
+
+            HexTile tile = snapshot.HexGrid.GetTile(coord);
+            if (tile == null)
+            {
+                return 0f;
+            }
+
+            List<HexTile> neighbors = HexUtils.GetNeighbors(tile, snapshot.HexGrid);
+            for (int i = 0; i < neighbors.Count; i++)
+            {
+                HexTile neighbor = neighbors[i];
+                if (neighbor != null
+                    && neighbor.HasWorldEffect()
+                    && neighbor.isFieldTile
+                    && neighbor.worldEffectOwner == snapshot.OpponentPlayerKey)
+                {
+                    return 260f + Mathf.Max(0, neighbor.fieldBonusMoneyPerTurn) * 50f;
+                }
+            }
+
+            return 0f;
+        }
+
+        private static float ScoreWorldEffectAttack(ComputerGameSnapshot snapshot, Unit attacker, HexTile targetTile)
+        {
+            if (snapshot?.HexGrid == null || attacker == null || targetTile == null || !targetTile.HasWorldEffect())
+            {
+                return 0f;
+            }
+
+            float score = 70f + ScoreThreatNearOwnFort(snapshot, targetTile) * 0.5f;
+
+            if (targetTile.isFieldTile)
+            {
+                int fieldHp = Mathf.Max(1, targetTile.fieldHp);
+                int damage = GetEffectiveWorldEffectDamage(attacker, targetTile);
+                score += 110f + Mathf.Max(0, targetTile.fieldBonusMoneyPerTurn) * 70f;
+
+                if (damage >= fieldHp)
+                {
+                    score += 180f;
+                }
+
+                return score;
+            }
+
+            CardRuntimeState targetCard = snapshot.BoardReader != null ? snapshot.BoardReader.GetCardAt(targetTile.coord) : null;
+            int targetHp = targetCard != null ? Mathf.Max(1, GetCardCurrentHp(targetCard)) : 1;
+            int targetDamage = targetCard != null ? Mathf.Max(0, GetCardCurrentDamage(targetCard)) : 0;
+
+            score += targetDamage * 20f;
+            if (attacker.attack >= targetHp)
+            {
+                score += 160f;
+            }
+
+            return score;
+        }
+
+        private static int GetEffectiveWorldEffectDamage(Unit attacker, HexTile targetTile)
+        {
+            if (attacker == null)
+            {
+                return 0;
+            }
+
+            if (targetTile != null && targetTile.isFieldTile && attacker.sourceCharacterCardData is UfoCowCardData ufoCowCardData)
+            {
+                return Mathf.Max(1, ufoCowCardData.fieldConsumeAmount);
+            }
+
+            return Mathf.Max(0, attacker.attack);
         }
 
         private static float ScoreFortAttack(ComputerGameSnapshot snapshot, Unit attacker)
@@ -1096,6 +1204,10 @@ namespace FortGame.Computer
                 {
                     threatScore = threatScore >= 10000f ? 9000f : 140f + threatScore * 0.45f;
                 }
+                else if (actionType == ActionType.AttackWorldEffect)
+                {
+                    threatScore = 140f + threatScore * 0.5f;
+                }
                 else
                 {
                     threatScore = 160f + threatScore * 0.55f;
@@ -1132,6 +1244,15 @@ namespace FortGame.Computer
             {
                 actionType = ActionType.AttackFort;
                 return CanProfileTarget(GetAttackTarget(attacker.sourceCharacterCardData), targetIsAir: false);
+            }
+
+            if (targetTile.HasWorldEffect()
+                && !targetTile.isMineTile
+                && targetTile.worldEffectOwner == snapshot.OpponentPlayerKey
+                && CanProfileTarget(GetAttackTarget(attacker.sourceCharacterCardData), targetIsAir: false))
+            {
+                actionType = ActionType.AttackWorldEffect;
+                return true;
             }
 
             if (targetTile.tileType != "unit" || targetTile.owner != snapshot.OpponentPlayerKey)

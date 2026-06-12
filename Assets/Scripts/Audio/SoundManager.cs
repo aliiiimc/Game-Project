@@ -13,6 +13,20 @@ public class SoundManager : MonoBehaviour
     [Range(0f,1f)] public float sfxVolume = 0.9f;
 
     private AudioSource musicSource;
+    private bool isMuted = false;
+    private const string MutePrefKey = "SoundMuted";
+
+    public bool IsMuted
+    {
+        get { return isMuted; }
+        set
+        {
+            isMuted = value;
+            PlayerPrefs.SetInt(MutePrefKey, isMuted ? 1 : 0);
+            PlayerPrefs.Save();
+            ApplyMuteState();
+        }
+    }
 
     public static SoundManager GetOrCreate()
     {
@@ -41,6 +55,8 @@ public class SoundManager : MonoBehaviour
         }
 
         EnsureSources();
+        isMuted = PlayerPrefs.GetInt(MutePrefKey, 0) == 1;
+        ApplyMuteState();
     }
 
     void EnsureSources()
@@ -65,6 +81,18 @@ public class SoundManager : MonoBehaviour
         }
     }
 
+    public void ToggleMute()
+    {
+        IsMuted = !IsMuted;
+    }
+
+    public void ApplyMuteState()
+    {
+        EnsureSources();
+        if (musicSource != null) musicSource.mute = isMuted;
+        if (sfxSource != null) sfxSource.mute = isMuted;
+    }
+
     public void PlayTheme()
     {
         if (themeClip == null)
@@ -75,6 +103,7 @@ public class SoundManager : MonoBehaviour
         EnsureSources();
         musicSource.clip = themeClip;
         musicSource.volume = musicVolume;
+        musicSource.mute = isMuted;
         if (!musicSource.isPlaying)
         {
             musicSource.Play();
@@ -93,6 +122,7 @@ public class SoundManager : MonoBehaviour
     {
         if (clip == null) return;
         EnsureSources();
+        sfxSource.mute = isMuted;
         sfxSource.PlayOneShot(clip, Mathf.Clamp01(sfxVolume * volumeScale));
     }
 }

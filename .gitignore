@@ -115,3 +115,7 @@ UpgradeLog.htm
 
 
 *.lscache
+
+# Unity Scene Recovery
+/[Aa]ssets/_Recovery/
+/[Aa]ssets/_Recovery.meta

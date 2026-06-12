@@ -360,7 +360,7 @@ namespace FortGame.UI
                 // Special display for UFO Cow to show field consume damage alongside normal attack damage
                 else if (charData is UfoCowCardData ufoCow)
                 {
-                    statsText.text = $"HP : {charData.maxHp}\nDamage : {charData.attackDamage} / <size=75%>{ufoCow.fieldConsumeAmount} for field</size>\nRange : {charData.attackRange}\nMovement : {speedText}";
+                    statsText.text = $"HP : {charData.maxHp}\nDamage : {charData.attackDamage} / {ufoCow.fieldConsumeAmount} against fields\nMovement : {speedText}";
                 }
                 else
                 {
